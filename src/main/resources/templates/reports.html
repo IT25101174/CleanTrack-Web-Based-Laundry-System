@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Reporting & Analytics Dashboard</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-glow: #3b82f6;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        /* Navbar */
+        .glass-navbar {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .navbar-brand-custom {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-outline-custom {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-custom:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: white;
+        }
+
+        /* Layout */
+        .dashboard-container {
+            flex-grow: 1;
+            padding: 40px 20px;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+            height: 100%;
+        }
+
+        /* KPI KPI-Cards */
+        .kpi-card {
+            border-radius: 16px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .kpi-revenue {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.2));
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .kpi-orders {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.2));
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .kpi-complaints {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.2));
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .kpi-unpaid {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.2));
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .kpi-icon {
+            position: absolute;
+            right: -10px;
+            bottom: -20px;
+            font-size: 6rem;
+            opacity: 0.1;
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+            letter-spacing: -1px;
+        }
+
+        /* List Items */
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-item:hover {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+        }
+
+        /* Audit Table */
+        .table-custom {
+            color: var(--text-main);
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--text-main);
+        }
+
+        .table-custom thead th {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            background-color: transparent;
+        }
+
+        .table-custom td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 15px 10px;
+            vertical-align: middle;
+            background-color: transparent;
+            color: #f3f4f6;
+        }
+
+        .badge-audit {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: normal;
+            padding: 5px 10px;
+            color: #cbd5e1;
+        }
+
+        /* Print Media Styles for PDF Export */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+
+            .glass-navbar,
+            .btn-print,
+            .kpi-icon {
+                display: none !important;
+            }
+
+            .dashboard-container {
+                padding: 0;
+            }
+
+            .glass-card,
+            .kpi-card {
+                background: white !important;
+                border: 1px solid #ccc !important;
+                color: black !important;
+                box-shadow: none !important;
+                page-break-inside: avoid;
+            }
+
+            .text-white,
+            .text-muted,
+            .text-success,
+            .text-primary,
+            .text-danger,
+            .text-warning,
+            .text-info,
+            .text-secondary {
+                color: black !important;
+            }
+
+            .badge {
+                border: 1px solid black;
+                color: black !important;
+                background: transparent !important;
+            }
+
+            .table-custom td,
+            .table-custom th {
+                color: black !important;
+                border-color: #ddd !important;
+            }
+
+            h2,
+            h5 {
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg glass-navbar navbar-dark py-3">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="/dashboard">
+                <i class="fa-solid fa-soap me-2"></i>CleanTrack
+            </a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-3 text-muted">
+                        Welcome, <strong class="text-white" th:text="${user.fullName}">Admin</strong>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/dashboard}" class="btn-outline-custom py-2 border-0"><i
+                                class="fa-solid fa-house me-2"></i>Dashboard</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container dashboard-container">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="fa-solid fa-chart-line me-2 text-primary"></i>Reporting & Analytics Dashboard</h2>
+                <p class="text-muted">High-level executive summary of laundry operations, finances, and system audit
+                    logs.</p>
+            </div>
+            <button onclick="window.print()" class="btn btn-outline-light btn-print px-4 py-2">
+                <i class="fa-solid fa-file-pdf me-2 text-danger"></i>Export PDF
+            </button>
+        </div>
+
+        <!-- KPI Row -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="kpi-card kpi-revenue">
+                    <div class="text-uppercase small fw-bold text-success">Total Verified Revenue</div>
+                    <div class="kpi-value text-white"
+                        th:text="${'Rs. ' + #numbers.formatDecimal(totalRevenue, 1, 'COMMA', 2, 'POINT')}">Rs. 0.00
+                    </div>
+                    <div class="small opacity-75">From Paid Invoices</div>
+                    <i class="fa-solid fa-money-bill-wave kpi-icon text-success"></i>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="kpi-card"
+                    style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(109, 40, 217, 0.2)); border-color: rgba(139, 92, 246, 0.3);">
+                    <div class="text-uppercase small fw-bold" style="color: #a78bfa;">Most Popular Service</div>
+                    <div class="kpi-value text-white fs-3" th:text="${popularService}">N/A</div>
+                    <div class="small opacity-75">By total historical orders</div>
+                    <i class="fa-solid fa-star kpi-icon" style="color: #a78bfa;"></i>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="kpi-card kpi-orders">
+                    <div class="text-uppercase small fw-bold text-primary">Total Active Orders</div>
+                    <div class="kpi-value text-white" th:text="${totalOrders}">0</div>
+                    <div class="small opacity-75">All time orders</div>
+                    <i class="fa-solid fa-basket-shopping kpi-icon text-primary"></i>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="kpi-card kpi-complaints">
+                    <div class="text-uppercase small fw-bold text-danger">Open Complaints</div>
+                    <div class="kpi-value text-white" th:text="${openComplaints}">0</div>
+                    <div class="small opacity-75" th:text="${resolvedComplaints + ' resolved'}">0 resolved</div>
+                    <i class="fa-solid fa-triangle-exclamation kpi-icon text-danger"></i>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="kpi-card kpi-unpaid">
+                    <div class="text-uppercase small fw-bold text-warning">Unpaid & Unapproved</div>
+                    <div class="kpi-value text-white" th:text="${unpaidInvoices}">0</div>
+                    <div class="small opacity-75" th:text="${paidInvoices + ' paid'}">0 paid</div>
+                    <i class="fa-solid fa-file-invoice-dollar kpi-icon text-warning"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <!-- Order Workflow Breakdown -->
+            <div class="col-lg-6 mb-4">
+                <div class="glass-card">
+                    <h5 class="mb-4"><i class="fa-solid fa-spinner me-2 text-info"></i>Order Workflow Breakdown</h5>
+
+                    <div class="stat-item">
+                        <span><i class="fa-solid fa-cart-arrow-down text-secondary me-2"></i>Order Placed</span>
+                        <span class="badge bg-secondary rounded-pill fs-6" th:text="${ordersPlaced}">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span><i class="fa-solid fa-box-open text-primary me-2"></i>Received</span>
+                        <span class="badge bg-primary rounded-pill fs-6" th:text="${ordersReceived}">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span><i class="fa-solid fa-water text-info me-2"></i>Washing</span>
+                        <span class="badge bg-info text-dark rounded-pill fs-6" th:text="${ordersWashing}">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span><i class="fa-solid fa-wind text-warning me-2"></i>Drying</span>
+                        <span class="badge bg-warning text-dark rounded-pill fs-6" th:text="${ordersDrying}">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span><i class="fa-solid fa-temperature-arrow-up text-danger me-2"></i>Ironing</span>
+                        <span class="badge bg-danger rounded-pill fs-6" th:text="${ordersIroning}">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span><i class="fa-solid fa-bell text-success me-2"></i>Ready For Collection</span>
+                        <span class="badge bg-success rounded-pill fs-6" th:text="${ordersReady}">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span><i class="fa-solid fa-check-double text-success me-2"></i>Completed</span>
+                        <span class="badge bg-success rounded-pill fs-6" th:text="${ordersCompleted}">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span><i class="fa-solid fa-ban text-muted me-2"></i>Cancelled</span>
+                        <span class="badge bg-dark rounded-pill fs-6" th:text="${ordersCancelled}">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Complaint Stats Breakdown -->
+            <div class="col-lg-6 mb-4">
+                <div class="glass-card h-100">
+                    <h5 class="mb-4"><i class="fa-solid fa-headset me-2 text-warning"></i>Complaint Status Breakdown
+                    </h5>
+
+                    <div class="stat-item mt-2">
+                        <span><i class="fa-solid fa-door-open text-danger me-2"></i>New / Open</span>
+                        <span class="badge bg-danger rounded-pill fs-6" th:text="${openComplaints}">0</span>
+                    </div>
+                    <div class="stat-item mt-3">
+                        <span><i class="fa-solid fa-user-gear text-warning me-2"></i>Assigned (In Progress)</span>
+                        <span class="badge bg-warning text-dark rounded-pill fs-6"
+                            th:text="${progressComplaints}">0</span>
+                    </div>
+                    <div class="stat-item mt-3">
+                        <span><i class="fa-solid fa-circle-check text-success me-2"></i>Resolved</span>
+                        <span class="badge bg-success rounded-pill fs-6" th:text="${resolvedComplaints}">0</span>
+                    </div>
+
+                    <div class="mt-5 text-center">
+                        <div class="display-1 text-muted opacity-25"><i class="fa-solid fa-chart-pie"></i></div>
+                        <p class="text-muted small mt-3">Total historical complaints processed: <strong
+                                th:text="${totalComplaints}">0</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="row">
+            <!-- Audit Logs Table -->
+            <div class="col-lg-8 mb-4">
+                <div class="glass-card h-100">
+                    <h5 class="mb-4"><i class="fa-solid fa-shield-halved me-2 text-success"></i>Recent System Activity
+                        (Audit Log)</h5>
+
+                    <div class="table-responsive">
+                        <table class="table table-custom table-borderless">
+                            <thead>
+                                <tr>
+                                    <th>Audit ID</th>
+                                    <th>Timestamp</th>
+                                    <th>Action Performed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="log : ${auditLogs}">
+                                    <td class="text-muted" th:text="${'#' + log.id}">#1</td>
+                                    <td><span class="badge badge-audit"
+                                            th:text="${#temporals.format(log.timestamp, 'yyyy-MM-dd HH:mm:ss')}">Time</span>
+                                    </td>
+                                    <td class="text-white" th:text="${log.actionPerformed}">Action</td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(auditLogs)}">
+                                    <td colspan="3" class="text-center py-4 text-muted">No system activity logged yet.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Executive Notes (CRUD) -->
+            <div class="col-lg-4 mb-4">
+                <div class="glass-card h-100">
+                    <h5 class="mb-4"><i class="fa-solid fa-sticky-note me-2 text-info"></i>Executive Notes</h5>
+                    <form th:action="@{/reports/note/add}" method="POST" class="mb-4">
+                        <textarea name="noteText" class="form-control mb-2" rows="2"
+                            placeholder="Add a new dashboard note..." required></textarea>
+                        <button type="submit" class="btn btn-outline-light btn-sm w-100">Add Note</button>
+                    </form>
+
+                    <div style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                        <div th:each="note : ${reportNotes}" class="p-3 mb-3"
+                            style="background: rgba(255,255,255,0.05); border-radius: 8px;">
+                            <p class="text-white mb-2" th:text="${note.noteText}"></p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted"><i class="fa-solid fa-user me-1"></i><span
+                                        th:text="${note.authorName}"></span></small>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-warning p-1 me-1" style="font-size:0.75rem;"
+                                        data-bs-toggle="modal"
+                                        th:data-bs-target="'#editNoteModal' + ${note.id}">Edit</button>
+                                    <form th:action="@{/reports/note/delete/{id}(id=${note.id})}" method="POST"
+                                        class="d-inline" onsubmit="return confirm('Delete this note?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger p-1"
+                                            style="font-size:0.75rem;">Del</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div th:if="${#lists.isEmpty(reportNotes)}" class="text-center text-muted py-3">No notes added
+                            yet.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Edit Note Modals -->
+    <th:block th:each="note : ${reportNotes}">
+        <div class="modal fade" th:id="'editNoteModal' + ${note.id}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content text-start">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Edit Note
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form th:action="@{/reports/note/edit/{id}(id=${note.id})}" method="POST">
+                        <div class="modal-body">
+                            <textarea name="noteText" class="form-control" rows="4" th:text="${note.noteText}"
+                                required></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary-custom">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </th:block>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

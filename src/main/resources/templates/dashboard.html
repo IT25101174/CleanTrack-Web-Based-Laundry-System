@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Dashboard</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-glow: #3b82f6;
+            --secondary-glow: #8b5cf6;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar Styling */
+        .glass-navbar {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .navbar-brand-custom {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Layout styling */
+        .dashboard-container {
+            flex-grow: 1;
+            padding: 40px 20px;
+            z-index: 10;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .role-badge {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+
+        .footer {
+            background: rgba(15, 23, 42, 0.8);
+            border-top: 1px solid var(--card-border);
+            padding: 20px 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .btn-outline-danger-custom {
+            color: #f87171;
+            border: 1px solid rgba(248, 113, 113, 0.4);
+            background: transparent;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-danger-custom:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .grid-item-icon {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg glass-navbar navbar-dark py-3">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="#">
+                <i class="fa-solid fa-soap me-2"></i>CleanTrack
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-3 text-muted">
+                        Welcome, <strong class="text-white" th:text="${user.fullName}">User FullName</strong>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/logout}" class="btn-outline-danger-custom">
+                            <i class="fa-solid fa-right-from-bracket me-2"></i>Sign Out
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace Container -->
+    <div class="container dashboard-container">
+        <!-- Dashboard Welcome Banner -->
+        <div class="glass-card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">CleanTrack Application Dashboard</h2>
+                    <p class="text-muted">You are logged into the laundry management control workspace.</p>
+                    <div class="mt-3">
+                        <span class="role-badge" th:text="${'ROLE: ' + user.role}">ROLE: CUSTOMER</span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <div class="text-muted">Username Reference: <code th:text="${user.username}">username</code></div>
+                    <div class="text-muted">User Record ID: <code th:text="${user.id}">1</code></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Application Modules Grid (For team members to mount logic) -->
+        <div class="row">
+            <!-- Customer module -->
+            <div class="col-md-4 mb-4" th:if="${user.role?.name() == 'CUSTOMER' || user.role?.name() == 'ADMIN'}">
+                <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="grid-item-icon"><i class="fa-solid fa-basket-shopping"></i></div>
+                        <h4>Order Management</h4>
+                        <p class="text-muted small">Place a new laundry request or trace standard active order history.</p>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/orders" class="btn btn-primary-custom w-100">Access Module (Dias)</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Billing module -->
+            <div class="col-md-4 mb-4" th:if="${user.role?.name() == 'CUSTOMER' || user.role?.name() == 'COUNTER_STAFF' || user.role?.name() == 'ADMIN'}">
+                <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="grid-item-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                        <h4>Billing & Invoices</h4>
+                        <p class="text-muted small">Calculate, view itemized financial invoices, and print receipts.</p>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/invoices" class="btn btn-primary-custom w-100">Access Module (Bandara)</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workflow Queue module -->
+            <div class="col-md-4 mb-4" th:if="${user.role?.name() != 'CUSTOMER'}">
+                <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="grid-item-icon"><i class="fa-solid fa-list-check"></i></div>
+                        <h4>Workflow & Queue</h4>
+                        <p class="text-muted small">Advance garments from washing stages to collection-ready state.</p>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/queue" class="btn btn-primary-custom w-100">Access Module (Samarasinghe)</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Complaint module -->
+            <div class="col-md-4 mb-4">
+                <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="grid-item-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+                        <h4>Complaint Resolution</h4>
+                        <p class="text-muted small">Report system defects, log user claims, and resolve tickets.</p>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/complaints" class="btn btn-primary-custom w-100">Access Module (Nethranjalee)</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory module -->
+            <div class="col-md-4 mb-4" th:if="${user.role?.name() == 'COUNTER_STAFF' || user.role?.name() == 'BRANCH_SUPERVISOR' || user.role?.name() == 'ADMIN'}">
+                <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="grid-item-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                        <h4>Inventory Management</h4>
+                        <p class="text-muted small">Track detergent stock, quantities, and low stock indicators.</p>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/inventory" class="btn btn-primary-custom w-100">Access Module (Hapuarachchi)</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reporting module -->
+            <div class="col-md-4 mb-4" th:if="${user.role?.name() == 'BRANCH_SUPERVISOR' || user.role?.name() == 'ADMIN'}">
+                <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="grid-item-icon"><i class="fa-solid fa-chart-line"></i></div>
+                        <h4>Reports & Audit Logs</h4>
+                        <p class="text-muted small">Monitor financial KPIs, dashboard metrics, and system security actions.</p>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/reports" class="btn btn-primary-custom w-100">Access Module (Weediyage)</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <span>&copy; 2026 CleanTrack Laundry Management System. Built using Lean MVP Architecture.</span>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
