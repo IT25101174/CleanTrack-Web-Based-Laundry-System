@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Billing & Invoices</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-glow: #3b82f6;
+            --secondary-glow: #8b5cf6;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar Styling */
+        .glass-navbar {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .navbar-brand-custom {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Layout styling */
+        .dashboard-container {
+            flex-grow: 1;
+            padding: 40px 20px;
+            z-index: 10;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .form-control,
+        .form-select {
+            background-color: rgba(15, 23, 42, 0.5) !important;
+            border: 1px solid var(--card-border) !important;
+            color: var(--text-main) !important;
+            padding: 10px 15px;
+            border-radius: 10px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background-color: rgba(15, 23, 42, 0.8) !important;
+            border-color: var(--primary-glow) !important;
+            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25) !important;
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            color: white;
+        }
+
+        .btn-success-custom {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success-custom:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            color: white;
+        }
+
+        .btn-outline-custom {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-custom:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: white;
+        }
+
+        .table-custom {
+            color: var(--text-main);
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        .table-custom thead th {
+            border: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .table-custom tbody tr {
+            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.2s ease;
+        }
+
+        .table-custom tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: scale(1.01);
+        }
+
+        .table-custom tbody td {
+            border: none;
+            padding: 15px;
+            vertical-align: middle;
+        }
+
+        .table-custom tbody td:first-child {
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+
+        .table-custom tbody td:last-child {
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        .badge-unpaid {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-paid {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Modal Customization */
+        .modal-content {
+            background: #0f172a;
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            color: var(--text-main);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .modal-footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .modal-title {
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg glass-navbar navbar-dark py-3">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="/dashboard">
+                <i class="fa-solid fa-soap me-2"></i>CleanTrack
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-3 text-muted">
+                        Welcome, <strong class="text-white" th:text="${user.fullName}">User FullName</strong>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/dashboard}" class="btn-outline-custom border-0">
+                            <i class="fa-solid fa-house me-2"></i>Dashboard
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace Container -->
+    <div class="container dashboard-container">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>Billing & Invoices</h2>
+                <p class="text-muted">Manage financial records and digital receipts.</p>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div th:if="${param.error}" class="alert alert-danger border-0 mb-4"
+            style="background: rgba(239, 68, 68, 0.2); color: #fca5a5;">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>
+            <span th:if="${param.error[0] == 'InvoiceAlreadyExists'}">An invoice has already been generated for this
+                Order ID.</span>
+            <span th:if="${param.error[0] == 'InsufficientPayment'}">The payment amount must fully cover the total
+                invoice amount.</span>
+            <span th:if="${param.error[0] == 'InvalidAmount'}">The payment amount is invalid or zero.</span>
+        </div>
+
+        <!-- Admin/Staff Generate Form -->
+        <div class="glass-card mb-4" th:if="${user.role?.name() == 'ADMIN' || user.role?.name() == 'COUNTER_STAFF'}">
+            <h5 class="mb-3"><i class="fa-solid fa-file-invoice me-2 text-primary"></i>Generate New Invoice</h5>
+            <form onsubmit="generateInvoice(event)" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label class="visually-hidden" for="orderId">Order ID</label>
+                    <input type="number" class="form-control" id="orderId" placeholder="Enter Order ID" required>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary-custom">Generate Bill</button>
+                </div>
+            </form>
+
+            <script>
+                function generateInvoice(e) {
+                    e.preventDefault();
+                    const orderId = document.getElementById('orderId').value;
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '/invoices/generate/' + orderId;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            </script>
+        </div>
+
+        <div class="glass-card p-0 overflow-hidden">
+            <div class="table-responsive px-3 pb-3">
+                <table class="table table-dark table-custom mb-0" style="--bs-table-bg: transparent;">
+                    <thead>
+                        <tr>
+                            <th>Invoice ID</th>
+                            <th>Order Ref</th>
+                            <th>Subtotal</th>
+                            <th>Tax</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Date Generated</th>
+                            <th>Action / Info</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Loop through invoices -->
+                        <tr th:each="invoice : ${invoices}">
+                            <td><strong class="text-white" th:text="${'#INV-' + invoice.id}">#INV-1</strong></td>
+                            <td><a class="text-decoration-none text-primary"
+                                    th:text="${'#ORD-' + invoice.orderId}">#ORD-1</a></td>
+                            <td th:text="${'Rs. ' + invoice.subtotal}">Rs. 0.00</td>
+                            <td class="text-muted" th:text="${'+ Rs. ' + invoice.taxAmount}">+Rs. 0.00</td>
+                            <td class="fw-bold text-white fs-5" th:text="${'Rs. ' + invoice.totalAmount}">Rs. 0.00</td>
+                            <td>
+                                <span class="badge badge-unpaid px-3 py-2 rounded-pill"
+                                    th:if="${invoice.status == 'UNPAID'}">UNPAID</span>
+                                <span class="badge px-3 py-2 rounded-pill text-warning border border-warning"
+                                    style="background: rgba(245, 158, 11, 0.1);"
+                                    th:if="${invoice.status == 'PENDING_APPROVAL'}"><i
+                                        class="fa-solid fa-clock me-1"></i>VERIFYING</span>
+                                <span class="badge badge-paid px-3 py-2 rounded-pill"
+                                    th:if="${invoice.status == 'PAID'}">PAID</span>
+                            </td>
+                            <td th:text="${#temporals.format(invoice.generatedAt, 'MMM dd, yyyy HH:mm')}">Oct 12, 2023
+                            </td>
+                            <td>
+                                <!-- Payment Button for Staff (Legacy UNPAID) -->
+                                <button th:if="${invoice.status == 'UNPAID' && user.role?.name() != 'CUSTOMER'}"
+                                    class="btn btn-success-custom btn-sm" data-bs-toggle="modal"
+                                    th:data-bs-target="${'#payModal-' + invoice.id}">
+                                    <i class="fa-solid fa-credit-card me-1"></i> Pay Now
+                                </button>
+
+                                <!-- Approve Transfer Button for Staff -->
+                                <div th:if="${invoice.status == 'PENDING_APPROVAL' && user.role?.name() != 'CUSTOMER'}">
+                                    <form th:action="@{/invoices/approve-bank-transfer/{id}(id=${invoice.id})}"
+                                        method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-success-custom btn-sm mb-1">
+                                            <i class="fa-solid fa-check me-1"></i> Approve
+                                        </button>
+                                    </form>
+                                    <br>
+                                    <a th:if="${invoice.receiptPath != null}" th:href="${invoice.receiptPath}"
+                                        target="_blank" class="text-primary small text-decoration-none">
+                                        <i class="fa-solid fa-file-pdf me-1"></i>View Receipt
+                                    </a>
+                                </div>
+
+                                <!-- Payment Info for Paid Invoices -->
+                                <span th:if="${invoice.status == 'PAID'}" class="text-muted small">
+                                    Paid via <strong class="text-white" th:text="${invoice.paymentMethod}">CASH</strong>
+                                </span>
+                                <!-- Waiting message for Customers -->
+                                <span th:if="${invoice.status == 'UNPAID' && user.role?.name() == 'CUSTOMER'}"
+                                    class="text-muted small">
+                                    Visit counter to pay
+                                </span>
+                                <span th:if="${invoice.status == 'PENDING_APPROVAL' && user.role?.name() == 'CUSTOMER'}"
+                                    class="text-muted small">
+                                    Waiting for admin to verify transfer
+                                </span>
+
+                                <!-- Delete Button for Admin (CRUD Delete) -->
+                                <form th:if="${user.role?.name() == 'ADMIN'}"
+                                    th:action="@{/invoices/delete/{id}(id=${invoice.id})}" method="POST"
+                                    class="d-inline mt-1"
+                                    onsubmit="return confirm('Are you sure you want to completely delete this invoice? This action cannot be undone.');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm p-1 px-2 mt-1"
+                                        style="font-size: 0.75rem;" title="Delete Invoice">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+
+
+                        </tr>
+
+                        <!-- Empty state -->
+                        <tr th:if="${#lists.isEmpty(invoices)}">
+                            <td colspan="8" class="text-center py-5">
+                                <div class="text-muted mb-3"><i
+                                        class="fa-solid fa-file-invoice-dollar fa-3x opacity-25"></i></div>
+                                <h5>No invoices found</h5>
+                                <p class="text-muted">There are no financial records to display.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Payment Modals (Staff Only) -->
+    <th:block th:if="${user.role?.name() != 'CUSTOMER'}" th:each="invoice : ${invoices}">
+        <div class="modal fade" th:id="${'payModal-' + invoice.id}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Record Payment for INV-<span th:text="${invoice.id}"></span></h5>
+                        <button type="button" class="close-btn" data-bs-dismiss="modal"
+                            style="background:none; border:none; color:white;"><i
+                                class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <form th:action="@{/invoices/pay/{id}(id=${invoice.id})}" method="POST">
+                        <div class="modal-body">
+                            <div class="mb-4 text-center">
+                                <div class="text-muted mb-1">Amount Due</div>
+                                <h2 class="text-white mb-0" th:text="${'Rs. ' + invoice.totalAmount}">Rs. 0.00</h2>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Payment Method</label>
+                                <select name="paymentMethod" class="form-select" required>
+                                    <option value="CASH">Cash</option>
+                                    <option value="BANK_TRANSFER">Bank Transfer</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Amount Received (Rs.)</label>
+                                <input type="number" step="0.01" name="amountPaid" class="form-control"
+                                    th:value="${invoice.totalAmount}" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success-custom"><i
+                                    class="fa-solid fa-check me-2"></i>Confirm Payment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </th:block>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
