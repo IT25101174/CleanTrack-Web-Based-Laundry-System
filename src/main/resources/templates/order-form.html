@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Order Form</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-glow: #3b82f6;
+            --secondary-glow: #8b5cf6;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar Styling */
+        .glass-navbar {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .navbar-brand-custom {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Layout styling */
+        .dashboard-container {
+            flex-grow: 1;
+            padding: 40px 20px;
+            z-index: 10;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-control, .form-select {
+            background-color: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 12px 15px;
+            border-radius: 10px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: rgba(15, 23, 42, 0.8);
+            border-color: var(--primary-glow);
+            color: var(--text-main);
+            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+            color: white;
+        }
+        
+        .btn-outline-custom {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-custom:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.4);
+            color: white;
+        }
+        
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2rem;
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        
+        .price-box {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px dashed rgba(16, 185, 129, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg glass-navbar navbar-dark py-3">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="/dashboard">
+                <i class="fa-solid fa-soap me-2"></i>CleanTrack
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-3 text-muted">
+                        Welcome, <strong class="text-white" th:text="${user.fullName}">User FullName</strong>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/dashboard}" class="btn-outline-custom border-0 py-2">
+                            <i class="fa-solid fa-house me-2"></i>Dashboard
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace Container -->
+    <div class="container dashboard-container">
+        
+        <div class="glass-card mt-4">
+            <div class="text-center">
+                <div class="icon-circle">
+                    <i class="fa-solid fa-basket-shopping"></i>
+                </div>
+                <h3 class="mb-1" th:text="${order.id != null ? 'Edit Order' : 'Place New Order'}">Place New Order</h3>
+                <p class="text-muted mb-4">Provide details and process your payment.</p>
+            </div>
+
+            <!-- Error message section -->
+            <div th:if="${error}" class="alert alert-danger" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
+            </div>
+
+            <form th:action="${order.id != null ? '/orders/' + order.id + '/edit' : '/orders/new'}" method="POST" th:object="${order}" enctype="multipart/form-data">
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-semibold">Item Description (e.g., 5 Shirts, 2 Trousers)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 border-secondary"><i class="fa-solid fa-align-left text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0" th:field="*{itemDescription}" required placeholder="Describe the items">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-semibold">Total Quantity</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 border-secondary"><i class="fa-solid fa-hashtag text-muted"></i></span>
+                        <input type="number" class="form-control border-start-0 ps-0" id="quantity" th:field="*{quantity}" min="1" required placeholder="Total number of items" oninput="calculateTotal()">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-muted fw-semibold">Service Type</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 border-secondary"><i class="fa-solid fa-shirt text-muted"></i></span>
+                        <select th:field="*{serviceType}" id="serviceType" class="form-select border-start-0 ps-0" required onchange="calculateTotal()">
+                            <option value="" selected disabled>-- Select a service --</option>
+                            <option value="WASH_ONLY">Wash Only (Standard) - Rs. 500/item</option>
+                            <option value="WASH_IRON">Wash & Iron (Premium) - Rs. 800/item</option>
+                            <option value="DRY_CLEAN">Dry Cleaning (Delicate) - Rs. 1200/item</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="price-box" id="priceBox" style="display: none;">
+                    <div class="text-muted small mb-1">Subtotal: Rs. <span id="subtotalDisplay">0.00</span> | Tax (10%): Rs. <span id="taxDisplay">0.00</span></div>
+                    <div class="fs-4 fw-bold text-success">Total Payable: Rs. <span id="totalDisplay">0.00</span></div>
+                </div>
+                
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
+                
+                <h5 class="mb-3">Payment Processing</h5>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-semibold">Select Payment Method</label>
+                    <select name="paymentMethod" id="paymentMethod" class="form-select" required onchange="togglePaymentFields()">
+                        <option value="" selected disabled>-- Select Payment Method --</option>
+                        <option value="BANK_TRANSFER">Bank Transfer (Upload Receipt)</option>
+                    </select>
+                </div>
+
+                <!-- Bank Transfer Details -->
+                <div id="bankTransferFields" class="p-3 mb-4 rounded" style="display: none; background: rgba(255,255,255,0.02);">
+                    <div class="mb-2 text-muted small">
+                        Please transfer the total amount to: <br>
+                        <strong>CleanTrack Bank PLC</strong><br>
+                        A/C: 1029384756 (Branch: Colombo)
+                    </div>
+                    <div class="mb-3 mt-3">
+                        <label class="form-label text-muted fw-semibold">Upload Bank Receipt (PDF/Image)</label>
+                        <input type="file" name="bankReceipt" id="bankReceipt" class="form-control" accept=".pdf,image/*">
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 mt-4">
+                    <a href="/orders" class="btn btn-outline-custom w-100">Cancel</a>
+                    <button type="submit" class="btn btn-primary-custom w-100" th:text="${order.id != null ? 'Update Order' : 'Submit & Pay'}">Submit & Pay</button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function calculateTotal() {
+            const qty = parseInt(document.getElementById('quantity').value) || 0;
+            const service = document.getElementById('serviceType').value;
+            
+            if (qty > 0 && service) {
+                let base = 500;
+                if (service === 'WASH_IRON') base = 800;
+                if (service === 'DRY_CLEAN') base = 1200;
+                
+                const subtotal = base * qty;
+                const tax = subtotal * 0.10;
+                const total = subtotal + tax;
+                
+                document.getElementById('subtotalDisplay').textContent = subtotal.toFixed(2);
+                document.getElementById('taxDisplay').textContent = tax.toFixed(2);
+                document.getElementById('totalDisplay').textContent = total.toFixed(2);
+                
+                document.getElementById('priceBox').style.display = 'block';
+            } else {
+                document.getElementById('priceBox').style.display = 'none';
+            }
+        }
+        
+        function togglePaymentFields() {
+            const method = document.getElementById('paymentMethod').value;
+            const bankFields = document.getElementById('bankTransferFields');
+            const fileInput = document.getElementById('bankReceipt');
+            
+            if (method === 'BANK_TRANSFER') {
+                bankFields.style.display = 'block';
+                fileInput.required = true;
+            } else {
+                bankFields.style.display = 'none';
+                fileInput.required = false;
+            }
+        }
+    </script>
+</body>
+</html>

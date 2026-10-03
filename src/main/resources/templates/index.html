@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Premium Laundry, Simplified</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-glow: #3b82f6;
+            --secondary-glow: #8b5cf6;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient background glow */
+        .glow-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.12;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .blob-1 {
+            width: 500px;
+            height: 500px;
+            background: var(--primary-glow);
+            top: -10%;
+            right: -5%;
+            animation: float-slow 15s infinite alternate;
+        }
+
+        .blob-2 {
+            width: 450px;
+            height: 450px;
+            background: var(--secondary-glow);
+            bottom: 20%;
+            left: -10%;
+            animation: float-slow 18s infinite alternate-reverse;
+        }
+
+        @keyframes float-slow {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, -30px) scale(1.05); }
+            100% { transform: translate(-30px, 50px) scale(0.95); }
+        }
+
+        /* Glassmorphic Navbar */
+        .glass-navbar {
+            background: rgba(11, 15, 25, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--card-border);
+            z-index: 1000;
+        }
+
+        .navbar-brand-custom {
+            font-weight: 800;
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-link-custom {
+            color: var(--text-muted) !important;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+            margin: 0 10px;
+        }
+
+        .nav-link-custom:hover {
+            color: var(--text-main) !important;
+        }
+
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .btn-premium {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25);
+        }
+
+        .btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            color: #fff;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            padding: 120px 0 80px 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero-title {
+            font-size: 3.8rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -1.5px;
+            margin-bottom: 24px;
+        }
+
+        .hero-title span {
+            background: linear-gradient(135deg, #60a5fa 30%, #a78bfa 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+
+        /* Info Cards */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 45px rgba(59, 130, 246, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #60a5fa;
+            margin-bottom: 24px;
+        }
+
+        .glass-card:nth-child(2) .icon-box {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+        }
+
+        /* Features/Services section */
+        .features-section {
+            padding: 80px 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-title {
+            font-size: 2.4rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .pricing-tag {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 15px 0;
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(8, 12, 21, 0.95);
+            border-top: 1px solid var(--card-border);
+            padding: 40px 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Glowing shape backdrops -->
+    <div class="glow-blob blob-1"></div>
+    <div class="glow-blob blob-2"></div>
+
+    <!-- Navigation Header -->
+    <nav class="navbar navbar-expand-lg glass-navbar navbar-dark py-3 sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="index.html" th:href="@{/}">
+                <i class="fa-solid fa-soap me-2"></i>CleanTrack
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#features">Features</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="#pricing">Pricing</a></li>
+                    <li class="nav-item" th:if="${session.user != null}">
+                        <a href="dashboard.html" th:href="@{/dashboard}" class="btn btn-premium ms-3">
+                            <i class="fa-solid fa-gauge me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item" th:if="${session.user == null}">
+                        <a href="login.html" th:href="@{/login}" class="btn btn-glass ms-3">Sign In</a>
+                    </li>
+                    <li class="nav-item" th:if="${session.user == null}">
+                        <a href="register.html" th:href="@{/register}" class="btn btn-premium ms-2">Get Started</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Showcase Section -->
+    <header class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 text-center text-lg-start">
+                    <h1 class="hero-title">Laundry Care<br><span>Engineered</span> For Modern Life</h1>
+                    <p class="hero-subtitle">Experience high-quality clean, continuous real-time tracking, and automated digital invoicing. Managed with standard session-based user authentication.</p>
+                    <div class="d-flex justify-content-center justify-content-lg-start gap-3">
+                        <a href="register.html" th:href="${session.user != null} ? @{/dashboard} : @{/register}" class="btn btn-premium btn-lg px-4 py-3">
+                            <i class="fa-solid fa-bolt me-2"></i>Launch CleanTrack
+                        </a>
+                        <a href="#features" class="btn btn-glass btn-lg px-4 py-3">Explore Features</a>
+                    </div>
+                </div>
+                <div class="col-lg-6 mt-5 mt-lg-0 text-center">
+                    <!-- Dashboard Mock/Visual Graphic -->
+                    <div class="glass-card p-4 mx-auto" style="max-width: 500px; transform: rotate(1deg); border-color: rgba(255,255,255,0.12);">
+                        <div class="d-flex align-items-center justify-content-between mb-4 border-bottom border-secondary pb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary rounded-circle p-2 me-2" style="width: 10px; height: 10px;"></div>
+                                <span class="fw-bold small">ACTIVE WORKSPACE</span>
+                            </div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">LIVE TRACKER</span>
+                        </div>
+                        <div class="text-start mb-3">
+                            <div class="text-muted small">Current Order Progress</div>
+                            <div class="h5 fw-bold">Order #2041 - Premium Suits</div>
+                        </div>
+                        <div class="progress mb-3 bg-dark" style="height: 8px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 70%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>Washing Stage</span>
+                            <span class="text-info">Ready in 25 mins</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features & Services Grid -->
+    <section class="features-section" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Why Choose CleanTrack?</h2>
+                <p class="text-muted col-md-6 mx-auto">Our laundry system uses a streamlined architecture designed for transparent workflows, speed, and clean service delivery.</p>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="glass-card h-100">
+                        <div class="icon-box"><i class="fa-solid fa-rotate"></i></div>
+                        <h4>Real-Time Workflow Queue</h4>
+                        <p class="text-muted">Track garment stages from initial sorting and washing, through to final ironing and pickup ready.</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="glass-card h-100">
+                        <div class="icon-box"><i class="fa-solid fa-file-invoice"></i></div>
+                        <h4>Instant Digital Invoicing</h4>
+                        <p class="text-muted">Calculate pricing transparently with accurate tax assessments. Zero hidden charges, all mapped directly via entities.</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="glass-card h-100">
+                        <div class="icon-box"><i class="fa-solid fa-user-lock"></i></div>
+                        <h4>Basic Auth Protections</h4>
+                        <p class="text-muted">Role-based controls using straightforward servlet sessions. Safeguards profiles for Customers, staff, and admins.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Packages Section -->
+    <section class="features-section" id="pricing" style="background: rgba(0,0,0,0.2);">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Simple Transparent Pricing</h2>
+                <p class="text-muted col-md-6 mx-auto">No contracts or hidden costs. Clean pricing based on standard service categories.</p>
+            </div>
+            
+            <div class="row justify-content-center">
+                <div class="col-md-4 mb-4">
+                    <div class="glass-card text-center">
+                        <span class="text-primary fw-bold text-uppercase small">Casual Clean</span>
+                        <div class="pricing-tag">$2.50<span class="fs-6 text-muted">/ kg</span></div>
+                        <ul class="list-unstyled text-muted text-start my-4 py-2 border-top border-bottom border-secondary">
+                            <li class="mb-2"><i class="fa-solid fa-check text-info me-2"></i>Standard Wash & Fold</li>
+                            <li class="mb-2"><i class="fa-solid fa-check text-info me-2"></i>2-Day Turnaround</li>
+                            <li class="mb-2"><i class="fa-solid fa-check text-info me-2"></i>Regular Detergent</li>
+                            <li class="text-decoration-line-through text-muted mb-2"><i class="fa-solid fa-xmark me-2"></i>Express Service</li>
+                        </ul>
+                        <a href="register.html" th:href="${session.user != null} ? @{/dashboard} : @{/register}" class="btn btn-glass w-100">Select Plan</a>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="glass-card text-center" style="border-color: rgba(59, 130, 246, 0.4); box-shadow: 0 15px 30px rgba(59, 130, 246, 0.1);">
+                        <span class="text-info fw-bold text-uppercase small">Express Premium</span>
+                        <div class="pricing-tag">$4.50<span class="fs-6 text-muted">/ kg</span></div>
+                        <ul class="list-unstyled text-muted text-start my-4 py-2 border-top border-bottom border-secondary">
+                            <li class="mb-2"><i class="fa-solid fa-check text-info me-2"></i>Eco-friendly Detergents</li>
+                            <li class="mb-2"><i class="fa-solid fa-check text-info me-2"></i>Same-day Delivery</li>
+                            <li class="mb-2"><i class="fa-solid fa-check text-info me-2"></i>Washing & Pressing</li>
+                            <li class="mb-2"><i class="fa-solid fa-check text-info me-2"></i>SMS/Dashboard Notifications</li>
+                        </ul>
+                        <a href="register.html" th:href="${session.user != null} ? @{/dashboard} : @{/register}" class="btn btn-premium w-100">Select Plan</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Area -->
+    <footer class="footer">
+        <div class="container text-center">
+            <a href="index.html" th:href="@{/}" class="brand-logo mb-3 d-inline-block text-decoration-none" style="font-size: 1.5rem;">
+                <i class="fa-solid fa-soap me-2"></i>CleanTrack
+            </a>
+            <p class="text-muted mb-0">&copy; 2026 CleanTrack Laundry Management. Built using modern MVC with Thymeleaf.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
