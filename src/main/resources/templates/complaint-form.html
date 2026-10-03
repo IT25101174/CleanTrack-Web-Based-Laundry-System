@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Complaint Resolution</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-glow: #3b82f6;
+            --secondary-glow: #8b5cf6;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .text-muted { color: var(--text-muted) !important; }
+
+        /* Navbar */
+        .glass-navbar {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--card-border);
+        }
+        .navbar-brand-custom {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .btn-outline-custom {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-outline-custom:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.4);
+            color: white;
+        }
+
+        /* Layout */
+        .dashboard-container { flex-grow: 1; padding: 40px 20px; }
+        
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .form-control, .form-select {
+            background-color: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 12px 15px;
+            border-radius: 10px;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: rgba(15, 23, 42, 0.8);
+            border-color: var(--primary-glow);
+            color: var(--text-main);
+            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #ef4444, #f97316); /* Red/Orange for issues */
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+            color: white;
+        }
+        
+        .btn-success-custom {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        /* Tickets Table */
+        .ticket-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        .ticket-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+            border-color: rgba(255,255,255,0.1);
+        }
+        
+        .status-open { color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .status-progress { color: #fbbf24; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .status-resolved { color: #34d399; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .status-archived { color: #9ca3af; background: rgba(156, 163, 175, 0.1); border: 1px solid rgba(156, 163, 175, 0.2); }
+
+        .modal-content {
+            background: #0f172a;
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            color: var(--text-main);
+        }
+        .modal-header { border-bottom: 1px solid rgba(255,255,255,0.05); }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg glass-navbar navbar-dark py-3">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="/dashboard">
+                <i class="fa-solid fa-soap me-2"></i>CleanTrack
+            </a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-3 text-muted">
+                        Welcome, <strong class="text-white" th:text="${user.fullName}">User</strong>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/dashboard}" class="btn-outline-custom py-2 border-0"><i class="fa-solid fa-house me-2"></i>Dashboard</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container dashboard-container">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="fa-solid fa-circle-exclamation me-2 text-danger"></i>Complaint Resolution Center</h2>
+                <p class="text-muted" th:if="${user.role?.name() == 'CUSTOMER'}">Report issues with your orders and track their resolution progress.</p>
+                <p class="text-muted" th:if="${user.role?.name() != 'CUSTOMER'}">Manage customer tickets, assign staff, and resolve issues.</p>
+            </div>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success" style="background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <i class="fa-solid fa-circle-check me-2"></i><span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="alert alert-danger" style="background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2);">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
+        </div>
+
+        <div class="row">
+            <!-- CUSTOMER: Submit New Complaint Form -->
+            <div class="col-lg-4 mb-4" th:if="${user.role?.name() == 'CUSTOMER'}">
+                <div class="glass-card sticky-top" style="top: 20px;">
+                    <h5 class="mb-4"><i class="fa-solid fa-ticket me-2 text-danger"></i>Open a Ticket</h5>
+                    <form th:action="@{/complaints/submit}" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Select Order</label>
+                            <select name="orderId" class="form-select" required>
+                                <option value="" selected disabled>-- Select an Order --</option>
+                                <option th:each="order : ${myOrders}" th:value="${order.id}" th:text="${order.trackingId + ' (' + order.status + ')'}"></option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Issue Category</label>
+                            <select name="category" class="form-select" required>
+                                <option value="" selected disabled>-- Select Issue Type --</option>
+                                <option value="Damaged Garment">Damaged Garment</option>
+                                <option value="Missing Item">Missing Item</option>
+                                <option value="Delayed Order">Delayed Order</option>
+                                <option value="Billing Issue">Billing Issue</option>
+                                <option value="Poor Cleaning Quality">Poor Cleaning Quality</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-muted small">Issue Description</label>
+                            <textarea name="issueDescription" class="form-control" rows="4" placeholder="Please describe the issue in detail..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary-custom w-100">Submit Ticket</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ticket List (For both Customers and Staff) -->
+            <div th:class="${user.role?.name() == 'CUSTOMER' ? 'col-lg-8' : 'col-lg-12'}">
+                <div class="glass-card p-4">
+                    <h5 class="mb-4"><i class="fa-solid fa-list-check me-2"></i>Active Tickets</h5>
+                    
+                    <div th:if="${#lists.isEmpty(complaints)}" class="text-center py-5">
+                        <div class="text-muted mb-3"><i class="fa-solid fa-face-smile fa-3x opacity-25"></i></div>
+                        <h5>No complaints found!</h5>
+                        <p class="text-muted">Everything is running smoothly.</p>
+                    </div>
+
+                    <!-- Ticket Cards -->
+                    <div th:each="complaint : ${complaints}" class="ticket-item">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <span class="badge rounded-pill px-3 py-1 mb-2" 
+                                      th:classappend="${complaint.status == 'OPEN' ? 'status-open' : (complaint.status == 'IN_PROGRESS' ? 'status-progress' : (complaint.status == 'RESOLVED' ? 'status-resolved' : 'status-archived'))}">
+                                    <i class="fa-solid fa-circle fa-2xs me-2"></i><span th:text="${complaint.status}">OPEN</span>
+                                </span>
+                                <h5 class="mb-1 text-white">
+                                    <span th:text="${complaint.category}">Category</span> 
+                                    <span class="text-muted fs-6 ms-2" th:text="${'| Ref: ' + complaint.order.trackingId}">Ref</span>
+                                </h5>
+                                <div class="small text-muted" th:if="${user.role?.name() != 'CUSTOMER'}">
+                                    <i class="fa-solid fa-user me-1"></i> Customer: <span class="text-white" th:text="${complaint.customer.fullName}">Name</span>
+                                </div>
+                            </div>
+                            <div class="text-end small">
+                                <div class="text-muted" th:text="${#temporals.format(complaint.createdAt, 'MMM dd, yyyy')}">Date</div>
+                                <div class="mt-1">
+                                    <i class="fa-solid fa-headset text-primary me-1"></i> 
+                                    <span th:text="${complaint.assignedStaff != null ? complaint.assignedStaff.fullName : 'Unassigned'}">Unassigned</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded mb-3" style="background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.05);">
+                            <div class="text-muted small mb-1">Customer Description:</div>
+                            <div th:text="${complaint.issueDescription}">Description</div>
+                        </div>
+
+                        <!-- Resolution Notes Section -->
+                        <div th:if="${complaint.resolutionNotes != null}" class="p-3 rounded mb-3" style="background: rgba(16, 185, 129, 0.05); border: 1px dashed rgba(16, 185, 129, 0.3);">
+                            <div class="text-success small mb-1"><i class="fa-solid fa-check-circle me-1"></i>Resolution Notes:</div>
+                            <div class="text-white" th:text="${complaint.resolutionNotes}">Notes</div>
+                            <div class="text-muted small mt-2" th:text="${'Resolved on: ' + #temporals.format(complaint.resolvedAt, 'MMM dd, yyyy HH:mm')}">Date</div>
+                        </div>
+
+                        <!-- Customer Action Buttons (CRUD Delete) -->
+                        <div class="d-flex gap-2 mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.05);" th:if="${user.role?.name() == 'CUSTOMER'}">
+                            <form th:action="@{/complaints/delete/{id}(id=${complaint.id})}" method="POST" onsubmit="return confirm('Are you sure you want to completely delete this complaint?');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm py-1">
+                                    <i class="fa-solid fa-trash me-1"></i>Delete Complaint
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Staff Action Buttons (Only for non-customers and if not archived) -->
+                        <div class="d-flex gap-2 mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.05);" th:if="${user.role?.name() != 'CUSTOMER' && complaint.status != 'ARCHIVED'}">
+                            
+                            <!-- Assign Button (Admin/Supervisor) -->
+                            <button th:if="${user.role?.name() == 'ADMIN' || user.role?.name() == 'BRANCH_SUPERVISOR'}" 
+                                    class="btn btn-outline-custom btn-sm py-1" data-bs-toggle="modal" th:data-bs-target="${'#assignModal-' + complaint.id}">
+                                <i class="fa-solid fa-user-plus me-1"></i>Assign
+                            </button>
+
+                            <!-- Resolve Button -->
+                            <button th:if="${complaint.status != 'RESOLVED'}" 
+                                    class="btn btn-success-custom btn-sm py-1" data-bs-toggle="modal" th:data-bs-target="${'#resolveModal-' + complaint.id}">
+                                <i class="fa-solid fa-check me-1"></i>Resolve
+                            </button>
+
+                            <!-- Archive Button (Admin/Supervisor) -->
+                            <form th:if="${(user.role?.name() == 'ADMIN' || user.role?.name() == 'BRANCH_SUPERVISOR') && complaint.status == 'RESOLVED'}" 
+                                  th:action="@{/complaints/archive/{id}(id=${complaint.id})}" method="POST" class="ms-auto">
+                                <button type="submit" class="btn btn-outline-secondary border-0 btn-sm" title="Archive Ticket">
+                                    <i class="fa-solid fa-box-archive"></i>
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS (Rendered outside complex containers to prevent Bootstrap z-index bugs) -->
+    <div th:if="${user.role?.name() != 'CUSTOMER'}">
+        <div th:each="complaint : ${complaints}">
+            <!-- Assign Modal -->
+            <div class="modal fade" th:id="${'assignModal-' + complaint.id}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form th:action="@{/complaints/assign/{id}(id=${complaint.id})}" method="POST">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Assign Ticket</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <label class="form-label text-muted">Select Staff Member</label>
+                                <select name="staffId" class="form-select" required>
+                                    <option value="" selected disabled>-- Select Staff --</option>
+                                    <option th:each="staff : ${staffMembers}" th:value="${staff.id}" th:text="${staff.fullName + ' (' + staff.role + ')'}"></option>
+                                </select>
+                            </div>
+                            <div class="modal-footer border-0 pt-0">
+                                <button type="submit" class="btn btn-primary w-100">Confirm Assignment</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resolve Modal -->
+            <div class="modal fade" th:id="${'resolveModal-' + complaint.id}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form th:action="@{/complaints/resolve/{id}(id=${complaint.id})}" method="POST">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Resolve Ticket</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <label class="form-label text-muted">Resolution Notes</label>
+                                <textarea name="resolutionNotes" class="form-control" rows="4" placeholder="Explain how this issue was solved..." required></textarea>
+                            </div>
+                            <div class="modal-footer border-0 pt-0">
+                                <button type="submit" class="btn btn-success w-100">Close Ticket</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
