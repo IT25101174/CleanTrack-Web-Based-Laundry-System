@@ -29,7 +29,6 @@ import java.util.Optional;
 public class InventoryController {
 
     private static final String MANAGE_DENIED_MESSAGE = "Only the Branch Supervisor can manage inventory.";
-    private static final int MAX_GARMENTS_PER_UNIT = 100_000;
 
     private final InventoryItemRepository inventoryItemRepository;
     private final AuditLogRepository auditLogRepository;
@@ -91,7 +90,6 @@ public class InventoryController {
                           @RequestParam(required = false) String unit,
                           @RequestParam(required = false) String supplier,
                           @RequestParam(required = false) String unitPrice,
-                          @RequestParam(required = false) String garmentsPerUnit,
                           HttpSession session,
                           RedirectAttributes redirectAttributes) {
         User user = (User) session.getAttribute("user");
@@ -132,13 +130,6 @@ public class InventoryController {
             return "redirect:/inventory";
         }
 
-        Integer parsedRule = parseGarmentsPerUnit(garmentsPerUnit);
-        if (garmentsPerUnit != null && !garmentsPerUnit.isBlank() && parsedRule == null) {
-            redirectAttributes.addFlashAttribute("error",
-                    "Garments per unit must be a whole number between 1 and " + MAX_GARMENTS_PER_UNIT + ".");
-            return "redirect:/inventory";
-        }
-
         // The supplier must be one registered under Suppliers (a new item has no earlier value to keep).
         String resolvedSupplier = null;
         if (supplierValue != null) {
@@ -156,7 +147,6 @@ public class InventoryController {
                 parseNonNegativeInt(quantity),
                 parseNonNegativeInt(lowStockThreshold),
                 categoryValue, unitValue, resolvedSupplier, parsedPrice);
-        item.setGarmentsPerUnit(parsedRule);
         inventoryItemRepository.save(item);
         auditLogRepository.save(new AuditLog("Inventory item added: " + item.getItemName() + " by " + user.getFullName()));
         redirectAttributes.addFlashAttribute("success", "Item added successfully.");
@@ -172,7 +162,6 @@ public class InventoryController {
                            @RequestParam(required = false) String unit,
                            @RequestParam(required = false) String supplier,
                            @RequestParam(required = false) String unitPrice,
-                           @RequestParam(required = false) String garmentsPerUnit,
                            HttpSession session,
                            RedirectAttributes redirectAttributes) {
         User user = (User) session.getAttribute("user");
@@ -225,13 +214,6 @@ public class InventoryController {
             return "redirect:/inventory";
         }
 
-        Integer parsedRule = parseGarmentsPerUnit(garmentsPerUnit);
-        if (garmentsPerUnit != null && !garmentsPerUnit.isBlank() && parsedRule == null) {
-            redirectAttributes.addFlashAttribute("error",
-                    "Garments per unit must be a whole number between 1 and " + MAX_GARMENTS_PER_UNIT + ".");
-            return "redirect:/inventory";
-        }
-
         // A changed supplier must be a registered one. An unchanged value is kept as it is,
         // so items created before supplier management existed can still be edited.
         String resolvedSupplier = supplierValue;
@@ -255,7 +237,6 @@ public class InventoryController {
         item.setUnit(unitValue);
         item.setSupplier(resolvedSupplier);
         item.setUnitPrice(parsedPrice);
-        item.setGarmentsPerUnit(parsedRule);
         item.setUpdatedAt(LocalDateTime.now());
         inventoryItemRepository.save(item);
 
@@ -427,19 +408,6 @@ public class InventoryController {
         try {
             int value = Integer.parseInt(raw.trim());
             return value < 0 ? null : value;
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    // Optional auto-use rule: 1 unit of the item is used for every N garments. Blank means no rule.
-    private Integer parseGarmentsPerUnit(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        try {
-            int value = Integer.parseInt(raw.trim());
-            return (value < 1 || value > MAX_GARMENTS_PER_UNIT) ? null : value;
         } catch (NumberFormatException e) {
             return null;
         }
