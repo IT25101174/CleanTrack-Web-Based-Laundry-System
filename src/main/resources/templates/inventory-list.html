@@ -106,283 +106,304 @@
         }
         .modal-header { border-bottom: 1px solid var(--card-border); }
         .modal-footer { border-top: 1px solid var(--card-border); }
+
+        /* Keep the menu and buttons visible on half-width windows */
+        .navbar .container { flex-wrap: wrap; row-gap: 8px; }
+        .navbar-nav { flex-wrap: wrap; justify-content: flex-end; }
+        .navbar .btn-outline-custom { text-decoration: none; }
+        .btn-primary-custom { white-space: nowrap; }
+        .dashboard-container > .d-flex { flex-wrap: wrap; gap: 12px; }
+        @media (max-width: 991px) {
+            .navbar .btn-outline-custom { padding: 8px 10px; font-size: 0.9rem; }
+            .table-custom tbody td { padding: 10px; }
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg glass-navbar navbar-dark py-3">
-        <div class="container">
-            <a class="navbar-brand navbar-brand-custom" href="/dashboard">
-                <i class="fa-solid fa-soap me-2"></i>CleanTrack
-            </a>
-            <div class="collapse navbar-collapse justify-content-end">
-                <ul class="navbar-nav align-items-center">
-                    <li class="nav-item me-3 text-muted">
-                        Welcome, <strong class="text-white" th:text="${user.fullName}">User</strong>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/dashboard" class="btn-outline-custom border-0">
-                            <i class="fa-solid fa-house me-2"></i>Dashboard
-                        </a>
-                    </li>
-                </ul>
+<nav class="navbar navbar-expand glass-navbar navbar-dark py-3">
+    <div class="container">
+        <a class="navbar-brand navbar-brand-custom" href="/dashboard">
+            <i class="fa-solid fa-soap me-2"></i>CleanTrack
+        </a>
+        <div class="collapse navbar-collapse justify-content-end">
+            <ul class="navbar-nav align-items-center">
+                <li class="nav-item me-3 text-muted">
+                    Welcome, <strong class="text-white" th:text="${user.fullName}">User</strong>
+                </li>
+                <li class="nav-item">
+                    <a href="/suppliers" class="btn-outline-custom border-0">
+                        <i class="fa-solid fa-truck-field me-2"></i>Suppliers
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/supply-orders" class="btn-outline-custom border-0">
+                        <i class="fa-solid fa-clipboard-list me-2"></i>Supply Orders
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/dashboard" class="btn-outline-custom border-0">
+                        <i class="fa-solid fa-house me-2"></i>Dashboard
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container dashboard-container">
+    <!-- Toast Notifications -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-check-circle me-2"></i><span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Inventory Management</h2>
+            <p class="text-muted">Track laundry supplies, stock levels, and low-stock alerts.</p>
+        </div>
+        <button th:if="${user.role.name() != 'COUNTER_STAFF'}" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addItemModal">
+            <i class="fa-solid fa-plus me-2"></i>Add Item
+        </button>
+    </div>
+
+    <!-- Low stock alert banner -->
+    <div th:each="item : ${items}" th:if="${item.quantity <= item.lowStockThreshold}">
+        <div class="alert d-flex align-items-center mb-3" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; color: #f87171;" th:first>
+            <i class="fa-solid fa-triangle-exclamation me-3 fa-lg"></i>
+            <span>Low stock alert: <strong th:text="${item.itemName}"></strong> is below threshold!</span>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="glass-card mb-0">
+                <div class="text-uppercase small fw-bold text-primary">Total Inventory Items</div>
+                <div class="fs-3 fw-bold text-white" th:text="${#lists.size(items)}">0</div>
             </div>
         </div>
-    </nav>
-
-    <div class="container dashboard-container">
-        <!-- Toast Notifications -->
-        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fa-solid fa-check-circle me-2"></i><span th:text="${success}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2>Inventory Management</h2>
-                <p class="text-muted">Track laundry supplies, stock levels, and low-stock alerts.</p>
-            </div>
-            <button th:if="${user.role.name() != 'COUNTER_STAFF'}" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addItemModal">
-                <i class="fa-solid fa-plus me-2"></i>Add Item
-            </button>
-        </div>
-
-        <!-- Low stock alert banner -->
-        <div th:each="item : ${items}" th:if="${item.quantity <= item.lowStockThreshold}">
-            <div class="alert d-flex align-items-center mb-3" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; color: #f87171;" th:first>
-                <i class="fa-solid fa-triangle-exclamation me-3 fa-lg"></i>
-                <span>Low stock alert: <strong th:text="${item.itemName}"></strong> is below threshold!</span>
-            </div>
-        </div>
-
-        <!-- Summary Cards -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="glass-card mb-0">
-                    <div class="text-uppercase small fw-bold text-primary">Total Inventory Items</div>
-                    <div class="fs-3 fw-bold text-white" th:text="${#lists.size(items)}">0</div>
+        <div class="col-md-4">
+            <div class="glass-card mb-0" style="background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.2);">
+                <div class="text-uppercase small fw-bold text-danger">Low Stock Items</div>
+                <div class="fs-3 fw-bold text-white">
+                    <span th:text="${#lists.size(items.?[quantity <= lowStockThreshold])}">0</span>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="glass-card mb-0" style="background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.2);">
-                    <div class="text-uppercase small fw-bold text-danger">Low Stock Items</div>
-                    <div class="fs-3 fw-bold text-white">
-                        <span th:text="${#lists.size(items.?[quantity <= lowStockThreshold])}">0</span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="glass-card mb-0" style="background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.2);">
-                    <div class="text-uppercase small fw-bold text-success">Total Value</div>
-                    <div class="fs-3 fw-bold text-white">
-                        LKR <span th:text="${totalValue}">0.00</span>
-                    </div>
-                </div>
-            </div>
         </div>
-
-        <!-- Inventory table -->
-        <div class="glass-card p-0 overflow-hidden">
-            <div class="table-responsive px-3 pb-3">
-                <table class="table table-custom mb-0">
-                    <thead>
-                        <tr>
-                            <th>Item</th>
-                            <th>Category</th>
-                            <th>Supplier</th>
-                            <th>Quantity</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="item : ${items}" th:classappend="${item.quantity <= item.lowStockThreshold} ? 'low-stock-row' : ''">
-                            <td>
-                                <i class="fa-solid fa-box me-2 text-muted"></i>
-                                <span class="fw-bold" th:text="${item.itemName}"></span><br>
-                                <small class="text-muted" th:text="${item.unitPrice != null ? 'LKR ' + item.unitPrice + ' / ' + item.unit : ''}"></small>
-                            </td>
-                            <td><span class="badge bg-secondary rounded-pill" th:text="${item.category}"></span></td>
-                            <td class="text-muted" th:text="${item.supplier}"></td>
-                            <td>
-                                <span th:class="${item.quantity <= item.lowStockThreshold} ? 'qty-low' : 'qty-ok'"
-                                      th:text="${item.quantity}"></span>
-                                <small class="text-muted" th:text="${item.unit}"></small>
-                                <div class="small opacity-50">Min: <span th:text="${item.lowStockThreshold}"></span></div>
-                            </td>
-                            <td>
-                                <span class="badge qty-ok px-3 py-2 rounded-pill"
-                                      style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);"
-                                      th:if="${item.quantity > item.lowStockThreshold}">OK</span>
-                                <span class="badge qty-low px-3 py-2 rounded-pill"
-                                      style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);"
-                                      th:if="${item.quantity <= item.lowStockThreshold}">LOW</span>
-                            </td>
-                            <td>
-                                <div class="d-flex flex-wrap gap-2">
-                                    <!-- Consume -->
-                                    <form th:action="@{/inventory/consume/{id}(id=${item.id})}" method="POST" class="d-flex align-items-center gap-1">
-                                        <input type="number" name="amount" class="form-control form-control-sm" style="width:60px; padding:2px 5px;" placeholder="Qty" min="1" required>
-                                        <button type="submit" class="btn-restock" style="color: #f59e0b; border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.1);">
-                                            Use
-                                        </button>
-                                    </form>
-                                    
-                                    <!-- Restock -->
-                                    <form th:if="${user.role.name() != 'COUNTER_STAFF'}" th:action="@{/inventory/restock/{id}(id=${item.id})}" method="POST" class="d-flex align-items-center gap-1">
-                                        <input type="number" name="amount" class="form-control form-control-sm" style="width:60px; padding:2px 5px;" placeholder="Qty" min="1" required>
-                                        <button type="submit" class="btn-restock">
-                                            Restock
-                                        </button>
-                                    </form>
-
-                                    <!-- Edit / Delete -->
-                                    <button th:if="${user.role.name() != 'COUNTER_STAFF'}" class="btn-restock" style="color: #a78bfa; border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.1);" data-bs-toggle="modal" th:data-bs-target="'#editModal' + ${item.id}">
-                                        Edit
-                                    </button>
-                                    
-                                    <form th:if="${user.role.name() != 'COUNTER_STAFF'}" th:action="@{/inventory/delete/{id}(id=${item.id})}" method="POST" onsubmit="return confirm('Are you sure you want to delete this item?');">
-                                        <button type="submit" class="btn-restock" style="color: #ef4444; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.1);">
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
-                                
-
-                            </td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(items)}">
-                            <td colspan="6" class="text-center py-5">
-                                <i class="fa-solid fa-boxes-stacked fa-3x opacity-25 mb-3 d-block text-muted"></i>
-                                <h5>No items in inventory</h5>
-                                <p class="text-muted">Add your first supply item using the button above.</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div class="col-md-4">
+            <div class="glass-card mb-0" style="background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.2);">
+                <div class="text-uppercase small fw-bold text-success">Total Value</div>
+                <div class="fs-3 fw-bold text-white">
+                    LKR <span th:text="${totalValue}">0.00</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Modals (Moved outside table to fix z-index and click issues) -->
-    <th:block th:each="item : ${items}">
-        <div class="modal fade" th:id="'editModal' + ${item.id}" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content text-start">
-                    <div class="modal-header">
-                        <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Edit Inventory Item</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <form th:action="@{/inventory/edit/{id}(id=${item.id})}" method="POST">
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted">Item Name</label>
-                                    <input type="text" name="itemName" class="form-control" th:value="${item.itemName}" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted">Category</label>
-                                    <select name="category" class="form-control">
-                                        <option value="Detergent" th:selected="${item.category == 'Detergent'}">Detergent</option>
-                                        <option value="Softener" th:selected="${item.category == 'Softener'}">Softener</option>
-                                        <option value="Packaging" th:selected="${item.category == 'Packaging'}">Packaging</option>
-                                        <option value="Other" th:selected="${item.category == 'Other'}">Other</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted">Low Stock Threshold</label>
-                                    <input type="number" name="lowStockThreshold" class="form-control" th:value="${item.lowStockThreshold}" required min="0">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted">Unit (e.g. kg, bottles)</label>
-                                    <input type="text" name="unit" class="form-control" th:value="${item.unit}">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted">Unit Price (LKR)</label>
-                                    <input type="number" step="0.01" name="unitPrice" class="form-control" th:value="${item.unitPrice}">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted">Supplier</label>
-                                    <input type="text" name="supplier" class="form-control" th:value="${item.supplier}">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary-custom">Save Changes</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </th:block>
+    <!-- Inventory table -->
+    <div class="glass-card p-0 overflow-hidden">
+        <div class="table-responsive px-3 pb-3">
+            <table class="table table-custom mb-0">
+                <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Supplier</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${items}" th:classappend="${item.quantity <= item.lowStockThreshold} ? 'low-stock-row' : ''">
+                    <td>
+                        <i class="fa-solid fa-box me-2 text-muted"></i>
+                        <span class="fw-bold" th:text="${item.itemName}"></span><br>
+                        <small class="text-muted" th:text="${item.unitPrice != null ? 'LKR ' + item.unitPrice + ' / ' + item.unit : ''}"></small>
+                    </td>
+                    <td><span class="badge bg-secondary rounded-pill" th:text="${item.category}"></span></td>
+                    <td class="text-muted" th:text="${item.supplier}"></td>
+                    <td>
+                                <span th:class="${item.quantity <= item.lowStockThreshold} ? 'qty-low' : 'qty-ok'"
+                                      th:text="${item.quantity}"></span>
+                        <small class="text-muted" th:text="${item.unit}"></small>
+                        <div class="small opacity-50">Min: <span th:text="${item.lowStockThreshold}"></span></div>
+                    </td>
+                    <td>
+                                <span class="badge qty-ok px-3 py-2 rounded-pill"
+                                      style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);"
+                                      th:if="${item.quantity > item.lowStockThreshold}">OK</span>
+                        <span class="badge qty-low px-3 py-2 rounded-pill"
+                              style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);"
+                              th:if="${item.quantity <= item.lowStockThreshold}">LOW</span>
+                    </td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-2">
+                            <!-- Consume -->
+                            <form th:action="@{/inventory/consume/{id}(id=${item.id})}" method="POST" class="d-flex align-items-center gap-1">
+                                <input type="number" name="amount" class="form-control form-control-sm" style="width:60px; padding:2px 5px;" placeholder="Qty" min="1" required>
+                                <button type="submit" class="btn-restock" style="color: #f59e0b; border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.1);">
+                                    Use
+                                </button>
+                            </form>
 
-    <!-- Add Item Modal -->
-    <div class="modal fade" id="addItemModal" tabindex="-1">
+                            <!-- Restock -->
+                            <form th:if="${user.role.name() != 'COUNTER_STAFF'}" th:action="@{/inventory/restock/{id}(id=${item.id})}" method="POST" class="d-flex align-items-center gap-1">
+                                <input type="number" name="amount" class="form-control form-control-sm" style="width:60px; padding:2px 5px;" placeholder="Qty" min="1" required>
+                                <button type="submit" class="btn-restock">
+                                    Restock
+                                </button>
+                            </form>
+
+                            <!-- Edit / Delete -->
+                            <button th:if="${user.role.name() != 'COUNTER_STAFF'}" class="btn-restock" style="color: #a78bfa; border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.1);" data-bs-toggle="modal" th:data-bs-target="'#editModal' + ${item.id}">
+                                Edit
+                            </button>
+
+                            <form th:if="${user.role.name() != 'COUNTER_STAFF'}" th:action="@{/inventory/delete/{id}(id=${item.id})}" method="POST" onsubmit="return confirm('Are you sure you want to delete this item?');">
+                                <button type="submit" class="btn-restock" style="color: #ef4444; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.1);">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+
+
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(items)}">
+                    <td colspan="6" class="text-center py-5">
+                        <i class="fa-solid fa-boxes-stacked fa-3x opacity-25 mb-3 d-block text-muted"></i>
+                        <h5>No items in inventory</h5>
+                        <p class="text-muted">Add your first supply item using the button above.</p>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modals (Moved outside table to fix z-index and click issues) -->
+<th:block th:each="item : ${items}">
+    <div class="modal fade" th:id="'editModal' + ${item.id}" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
+            <div class="modal-content text-start">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-box me-2"></i>Add Inventory Item</h5>
+                    <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Edit Inventory Item</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <form th:action="@{/inventory/add}" method="POST">
+                <form th:action="@{/inventory/edit/{id}(id=${item.id})}" method="POST">
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">Item Name</label>
-                                <input type="text" name="itemName" class="form-control" placeholder="e.g. Detergent Powder" required>
+                                <input type="text" name="itemName" class="form-control" th:value="${item.itemName}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">Category</label>
                                 <select name="category" class="form-control">
-                                    <option value="Detergent">Detergent</option>
-                                    <option value="Softener">Softener</option>
-                                    <option value="Packaging">Packaging</option>
-                                    <option value="Other">Other</option>
+                                    <option value="Detergent" th:selected="${item.category == 'Detergent'}">Detergent</option>
+                                    <option value="Softener" th:selected="${item.category == 'Softener'}">Softener</option>
+                                    <option value="Packaging" th:selected="${item.category == 'Packaging'}">Packaging</option>
+                                    <option value="Other" th:selected="${item.category == 'Other'}">Other</option>
                                 </select>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label text-muted">Initial Quantity</label>
-                                <input type="number" name="quantity" class="form-control" placeholder="e.g. 100" required min="0">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Low Stock Threshold</label>
+                                <input type="number" name="lowStockThreshold" class="form-control" th:value="${item.lowStockThreshold}" required min="0">
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label text-muted">Threshold</label>
-                                <input type="number" name="lowStockThreshold" class="form-control" placeholder="e.g. 20" required min="1">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label text-muted">Unit</label>
-                                <input type="text" name="unit" class="form-control" placeholder="kg, L, pieces">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Unit (e.g. kg, bottles)</label>
+                                <input type="text" name="unit" class="form-control" th:value="${item.unit}">
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">Unit Price (LKR)</label>
-                                <input type="number" step="0.01" name="unitPrice" class="form-control" placeholder="e.g. 500.00">
+                                <input type="number" step="0.01" name="unitPrice" class="form-control" th:value="${item.unitPrice}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">Supplier</label>
-                                <input type="text" name="supplier" class="form-control" placeholder="ABC Suppliers">
+                                <input type="text" name="supplier" class="form-control" th:value="${item.supplier}">
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary-custom">Add Item</button>
+                        <button type="submit" class="btn btn-primary-custom">Save Changes</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+</th:block>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Add Item Modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-box me-2"></i>Add Inventory Item</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/inventory/add}" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Item Name</label>
+                            <input type="text" name="itemName" class="form-control" placeholder="e.g. Detergent Powder" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Category</label>
+                            <select name="category" class="form-control">
+                                <option value="Detergent">Detergent</option>
+                                <option value="Softener">Softener</option>
+                                <option value="Packaging">Packaging</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted">Initial Quantity</label>
+                            <input type="number" name="quantity" class="form-control" placeholder="e.g. 100" required min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted">Threshold</label>
+                            <input type="number" name="lowStockThreshold" class="form-control" placeholder="e.g. 20" required min="1">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted">Unit</label>
+                            <input type="text" name="unit" class="form-control" placeholder="kg, L, pieces">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Unit Price (LKR)</label>
+                            <input type="number" step="0.01" name="unitPrice" class="form-control" placeholder="e.g. 500.00">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Supplier</label>
+                            <input type="text" name="supplier" class="form-control" placeholder="ABC Suppliers">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Add Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
