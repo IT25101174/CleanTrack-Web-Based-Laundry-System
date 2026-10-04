@@ -7,172 +7,67 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --bg-color: #0b0f19;
-            --card-bg: rgba(255,255,255,0.03);
-            --card-border: rgba(255,255,255,0.08);
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-        }
-        .text-muted { color: var(--text-muted) !important; }
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .glass-navbar {
-            background: rgba(15,23,42,0.6);
-            backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--card-border);
-        }
-        .navbar-brand-custom {
-            font-weight: 700; font-size: 1.5rem;
-            background: linear-gradient(135deg, #60a5fa, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .dashboard-container { flex-grow: 1; padding: 40px 20px; }
-        .glass-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--card-border);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-            margin-bottom: 24px;
-        }
-        .form-control {
-            background-color: rgba(15,23,42,0.5);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            padding: 10px 15px; border-radius: 10px;
-        }
-        .form-control:focus {
-            background-color: rgba(15,23,42,0.8);
-            border-color: #3b82f6;
-            color: var(--text-main);
-            box-shadow: 0 0 0 0.25rem rgba(59,130,246,0.25);
-        }
-        .btn-primary-custom {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            border: none; color: #fff;
-            padding: 10px 20px; border-radius: 10px;
-            font-weight: 600; transition: all 0.3s ease;
-        }
-        .btn-primary-custom:hover { transform: translateY(-1px); color: white; box-shadow: 0 4px 12px rgba(139,92,246,0.3); }
-        .btn-outline-custom {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #fff; padding: 10px 20px;
-            border-radius: 10px; font-weight: 600;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-        .btn-outline-custom:hover { background: rgba(255,255,255,0.05); color: white; }
-        .btn-action {
-            background: rgba(59,130,246,0.1);
-            border: 1px solid rgba(59,130,246,0.3);
-            color: #60a5fa; padding: 5px 12px;
-            border-radius: 8px; font-size: 0.82rem; font-weight: 600;
-            cursor: pointer; transition: all 0.2s ease;
-        }
-        .btn-action:hover { background: rgba(59,130,246,0.25); }
-        .table-custom { color: var(--text-main); border-collapse: separate; border-spacing: 0 10px; }
-        .table-custom thead th { border: none; color: var(--text-muted); font-weight: 500; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
-        .table-custom tbody tr { background: rgba(255,255,255,0.02); transition: all 0.2s ease; }
-        .table-custom tbody tr:hover { background: rgba(255,255,255,0.05); }
-        .table-custom tbody td { border: none; padding: 15px; vertical-align: middle; }
-        .table-custom tbody td:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
-        .table-custom tbody td:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
-        .modal-content {
-            background: #111827;
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            color: var(--text-main);
-        }
-        .modal-header { border-bottom: 1px solid var(--card-border); }
-        .modal-footer { border-top: 1px solid var(--card-border); }
-
-        /* Keep the menu and buttons visible on half-width windows */
-        .navbar .container { flex-wrap: wrap; row-gap: 8px; }
-        .navbar-nav { flex-wrap: wrap; justify-content: flex-end; }
-        .navbar .btn-outline-custom { text-decoration: none; }
-        .btn-primary-custom { white-space: nowrap; }
-        .dashboard-container > .d-flex { flex-wrap: wrap; gap: 12px; }
-        @media (max-width: 991px) {
-            .navbar .btn-outline-custom { padding: 8px 10px; font-size: 0.9rem; }
-            .table-custom tbody td { padding: 10px; }
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/inventory-ui.css}">
 </head>
-<body>
-<nav class="navbar navbar-expand glass-navbar navbar-dark py-3">
+<body data-page="suppliers">
+<nav class="navbar navbar-expand ct-nav py-3">
     <div class="container">
-        <a class="navbar-brand navbar-brand-custom" href="/dashboard">
-            <i class="fa-solid fa-soap me-2"></i>CleanTrack
-        </a>
+        <a class="ct-brand" href="/dashboard"><i class="fa-solid fa-soap me-2"></i>CleanTrack</a>
         <div class="collapse navbar-collapse justify-content-end">
             <ul class="navbar-nav align-items-center">
-                <li class="nav-item me-3 text-muted">
-                    Welcome, <strong class="text-white" th:text="${user.fullName}">User</strong>
-                </li>
-                <li class="nav-item">
-                    <a href="/inventory" class="btn-outline-custom border-0">
-                        <i class="fa-solid fa-boxes-stacked me-2"></i>Inventory
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/supply-orders" class="btn-outline-custom border-0">
-                        <i class="fa-solid fa-clipboard-list me-2"></i>Supply Orders
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/dashboard" class="btn-outline-custom border-0">
-                        <i class="fa-solid fa-house me-2"></i>Dashboard
-                    </a>
-                </li>
+                <li class="nav-item ct-nav-user">Welcome, <strong class="text-white" th:text="${user.fullName}">User</strong></li>
+                <li class="nav-item"><a href="/inventory" class="ct-nav-link"><i class="fa-solid fa-boxes-stacked me-2"></i>Inventory</a></li>
+                <li class="nav-item"><a href="/suppliers" class="ct-nav-link active"><i class="fa-solid fa-truck-field me-2"></i>Suppliers</a></li>
+                <li class="nav-item"><a href="/supply-orders" class="ct-nav-link"><i class="fa-solid fa-clipboard-list me-2"></i>Supply Orders</a></li>
+                <li class="nav-item"><a href="/dashboard" class="ct-nav-link"><i class="fa-solid fa-house me-2"></i>Dashboard</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
-<div class="container dashboard-container">
+<div class="container ct-container">
     <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
         <i class="fa-solid fa-check-circle me-2"></i><span th:text="${success}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
         <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="ct-header">
         <div>
             <h2>Suppliers</h2>
-            <p class="text-muted mb-0">Keep contact details for the suppliers who provide your laundry supplies.</p>
+            <p class="text-muted">Keep contact details for the suppliers who provide your laundry supplies.</p>
             <p class="text-muted small mt-1" th:unless="${canManage}">View only. Only the Branch Supervisor can change suppliers.</p>
         </div>
-        <button th:if="${canManage}" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+        <button th:if="${canManage}" type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
             <i class="fa-solid fa-plus me-2"></i>Add Supplier
         </button>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="glass-card mb-0">
-                <div class="text-uppercase small fw-bold text-primary">Total Suppliers</div>
-                <div class="fs-3 fw-bold text-white" th:text="${#lists.size(suppliers)}">0</div>
-            </div>
+    <div class="stat-row">
+        <div class="stat tone-blue">
+            <span class="stat-icon"><i class="fa-solid fa-truck-field"></i></span>
+            <span>
+                <span class="stat-label d-block">Total Suppliers</span>
+                <span class="stat-value" th:text="${#lists.size(suppliers)}">0</span>
+            </span>
         </div>
     </div>
 
-    <div class="glass-card p-0 overflow-hidden">
-        <div class="table-responsive px-3 pb-3">
-            <table class="table table-custom mb-0">
+    <div class="toolbar" th:unless="${#lists.isEmpty(suppliers)}">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" id="filterSearch" class="form-control" placeholder="Search name, contact, phone, email" aria-label="Search suppliers">
+        </div>
+        <span class="spacer"></span>
+        <span class="result-count" id="filterCount"></span>
+    </div>
+
+    <div class="panel">
+        <div class="table-wrap">
+            <table class="table table-modern">
                 <thead>
                 <tr>
                     <th>Supplier</th>
@@ -184,79 +79,87 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="s : ${suppliers}">
+                <tr th:each="s : ${suppliers}" data-filter-item>
                     <td>
-                        <i class="fa-solid fa-truck-field me-2 text-muted"></i>
-                        <span class="fw-bold" th:text="${s.supplierName}"></span>
+                        <span class="cell-title"><i class="fa-solid fa-truck-field me-2 text-muted"></i><span th:text="${s.supplierName}"></span></span>
                     </td>
                     <td class="text-muted" th:text="${s.contactPerson != null ? s.contactPerson : '-'}"></td>
                     <td class="text-muted" th:text="${s.phone != null ? s.phone : '-'}"></td>
                     <td class="text-muted" th:text="${s.email != null ? s.email : '-'}"></td>
                     <td class="text-muted" th:text="${s.address != null ? s.address : '-'}"></td>
                     <td th:if="${canManage}">
-                        <div class="d-flex flex-wrap gap-2">
-                            <button type="button" class="btn-action"
-                                    style="color: #a78bfa; border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.1);"
+                        <div class="row-actions">
+                            <button type="button" class="icon-btn" data-tip="Edit supplier" aria-label="Edit supplier"
                                     data-bs-toggle="modal" th:data-bs-target="'#supplierEditModal' + ${s.id}">
-                                Edit
+                                <i class="fa-solid fa-pen"></i>
                             </button>
                             <form th:action="@{/suppliers/delete/{id}(id=${s.id})}" method="POST"
-                                  onsubmit="return confirm('Are you sure you want to delete this supplier?');">
-                                <button type="submit" class="btn-action"
-                                        style="color: #ef4444; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.1);">
-                                    Delete
+                                  th:data-confirm="'Delete supplier ' + ${s.supplierName} + '?'" data-confirm-label="Delete">
+                                <button type="submit" class="icon-btn icon-btn-danger" data-tip="Delete supplier" aria-label="Delete supplier">
+                                    <i class="fa-solid fa-trash"></i>
                                 </button>
                             </form>
                         </div>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(suppliers)}">
-                    <td th:colspan="${canManage} ? 6 : 5" class="text-center py-5">
-                        <i class="fa-solid fa-truck-field fa-3x opacity-25 mb-3 d-block text-muted"></i>
-                        <h5>No suppliers yet</h5>
-                        <p class="text-muted mb-0">Add your first supplier to keep their contact details in one place.</p>
+                    <td th:colspan="${canManage} ? 6 : 5">
+                        <div class="empty-state">
+                            <i class="fa-solid fa-truck-field"></i>
+                            <h5>No suppliers yet</h5>
+                            <p class="mb-0">Add your first supplier to keep their contact details in one place.</p>
+                        </div>
                     </td>
                 </tr>
                 </tbody>
             </table>
         </div>
     </div>
+    <div id="noResults" class="panel mt-3" hidden>
+        <div class="empty-state">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <h5>No matching suppliers</h5>
+            <p class="mb-0">Try a different search.</p>
+        </div>
+    </div>
 </div>
 
-<!-- Edit modals (outside the table so clicks and z-index work correctly) -->
+<!-- Edit dialogs (outside the table so clicks and layering work correctly) -->
 <th:block th:if="${canManage}" th:each="s : ${suppliers}">
-    <div class="modal fade" th:id="'supplierEditModal' + ${s.id}" tabindex="-1">
+    <div class="modal fade" th:id="'supplierEditModal' + ${s.id}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content text-start">
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Edit Supplier</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form th:action="@{/suppliers/edit/{id}(id=${s.id})}" method="POST">
                     <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-muted">Supplier Name</label>
-                                <input type="text" name="supplierName" class="form-control" th:value="${s.supplierName}" maxlength="100" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-muted">Contact Person</label>
-                                <input type="text" name="contactPerson" class="form-control" th:value="${s.contactPerson}" maxlength="100">
-                            </div>
+                        <div class="form-section">
+                            <div class="form-section-title"><i class="fa-solid fa-building"></i>Company</div>
+                            <label class="form-label">Supplier Name</label>
+                            <input type="text" name="supplierName" class="form-control" th:value="${s.supplierName}" maxlength="100" required>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-muted">Phone</label>
-                                <input type="text" name="phone" class="form-control" th:value="${s.phone}" maxlength="30">
+                        <div class="form-section mb-0">
+                            <div class="form-section-title"><i class="fa-solid fa-address-book"></i>Contact details</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Contact Person</label>
+                                    <input type="text" name="contactPerson" class="form-control" th:value="${s.contactPerson}" maxlength="100">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone</label>
+                                    <input type="text" name="phone" class="form-control" th:value="${s.phone}" maxlength="30">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" name="email" class="form-control" th:value="${s.email}" maxlength="100">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Address</label>
+                                    <input type="text" name="address" class="form-control" th:value="${s.address}" maxlength="200">
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-muted">Email</label>
-                                <input type="email" name="email" class="form-control" th:value="${s.email}" maxlength="100">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Address</label>
-                            <input type="text" name="address" class="form-control" th:value="${s.address}" maxlength="200">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -269,39 +172,41 @@
     </div>
 </th:block>
 
-<!-- Add supplier modal -->
-<div class="modal fade" id="addSupplierModal" tabindex="-1" th:if="${canManage}">
+<!-- Add supplier dialog -->
+<div class="modal fade" id="addSupplierModal" tabindex="-1" aria-hidden="true" th:if="${canManage}">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fa-solid fa-truck-field me-2"></i>Add Supplier</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title"><i class="fa-solid fa-truck-field me-2 text-primary"></i>Add Supplier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form th:action="@{/suppliers/add}" method="POST">
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-muted">Supplier Name</label>
-                            <input type="text" name="supplierName" class="form-control" placeholder="e.g. ABC Suppliers" maxlength="100" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-muted">Contact Person</label>
-                            <input type="text" name="contactPerson" class="form-control" placeholder="e.g. Nimal Perera" maxlength="100">
-                        </div>
+                    <div class="form-section">
+                        <div class="form-section-title"><i class="fa-solid fa-building"></i>Company</div>
+                        <label class="form-label">Supplier Name</label>
+                        <input type="text" name="supplierName" class="form-control" placeholder="e.g. ABC Suppliers" maxlength="100" required>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-muted">Phone</label>
-                            <input type="text" name="phone" class="form-control" placeholder="e.g. +94 77 123 4567" maxlength="30">
+                    <div class="form-section mb-0">
+                        <div class="form-section-title"><i class="fa-solid fa-address-book"></i>Contact details</div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Contact Person</label>
+                                <input type="text" name="contactPerson" class="form-control" placeholder="e.g. Nimal Perera" maxlength="100">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Phone</label>
+                                <input type="text" name="phone" class="form-control" placeholder="e.g. +94 77 123 4567" maxlength="30">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" placeholder="e.g. sales@abc.lk" maxlength="100">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Address</label>
+                                <input type="text" name="address" class="form-control" placeholder="e.g. 12 Main Street, Colombo" maxlength="200">
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label text-muted">Email</label>
-                            <input type="email" name="email" class="form-control" placeholder="e.g. sales@abc.lk" maxlength="100">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Address</label>
-                        <input type="text" name="address" class="form-control" placeholder="e.g. 12 Main Street, Colombo" maxlength="200">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -314,5 +219,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/inventory-ui.js}"></script>
 </body>
 </html>
