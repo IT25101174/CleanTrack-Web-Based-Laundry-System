@@ -66,16 +66,6 @@ public class WorkQueueController {
         }
 
         model.addAttribute("orders", activeOrders);
-
-        // Orders whose next stage is washing/cleaning need the employee to record the supplies used (UC-05, 3a)
-        java.util.Set<Long> usageOrderIds = new java.util.HashSet<>();
-        for (com.cleantrack.laundry_system.model.Order o : activeOrders) {
-            if (isUsageStage(getNextStage(o.getStatus(), o.getServiceType()))) {
-                usageOrderIds.add(o.getId());
-            }
-        }
-        model.addAttribute("usageOrderIds", usageOrderIds);
-        model.addAttribute("inventoryItems", inventoryStockService.listItems());
         model.addAttribute("selectedStage", stageFilter);
         model.addAttribute("searchTerm", searchTerm);
         model.addAttribute("incorrectTrackingId", incorrectTrackingId);
@@ -84,9 +74,7 @@ public class WorkQueueController {
     }
 
     @org.springframework.web.bind.annotation.PostMapping("/queue/{id}/advance")
-    public String advanceStage(@org.springframework.web.bind.annotation.PathVariable Long id, jakarta.servlet.http.HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes,
-                               @org.springframework.web.bind.annotation.RequestParam(value = "itemId", required = false) java.util.List<Long> itemIds,
-                               @org.springframework.web.bind.annotation.RequestParam(value = "usedQty", required = false) java.util.List<String> usedQtys) {
+    public String advanceStage(@org.springframework.web.bind.annotation.PathVariable Long id, jakarta.servlet.http.HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
         com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
         
         if (user == null || "CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
@@ -114,19 +102,6 @@ public class WorkQueueController {
              return "redirect:/queue";
         }
 
-        // UC-05 extension 3a: when the order reaches the washing (or dry-clean cleaning) stage, the employee records
-        // the supplies actually used. The stock is deducted before the order advances; a problem stops the advance.
-        String successMessage = "Order advanced to " + nextStatus;
-        if (isUsageStage(nextStatus) && !inventoryStockService.listItems().isEmpty()) {
-            com.cleantrack.laundry_system.service.InventoryStockService.StageUsageResult usage =
-                    inventoryStockService.recordStageUsage(order, nextStatus, itemIds, usedQtys, user.getFullName());
-            if (!usage.isSuccess()) {
-                redirectAttributes.addFlashAttribute("error", usage.getError());
-                return "redirect:/queue";
-            }
-            successMessage += ". Supplies used: " + String.join(", ", usage.getUsed()) + ".";
-        }
-
         order.setStatus(nextStatus);
         orderRepository.save(order);
 
@@ -139,6 +114,22 @@ public class WorkQueueController {
         System.out.println("========== NOTIFICATION ==========");
         System.out.println("To Customer: Order " + order.getTrackingId() + " has reached stage: " + nextStatus);
         System.out.println("==================================");
+
+        // UC-05 extension 3a: when the order reaches the washing stage (cleaning for dry clean), the supplies it uses
+        // are deducted automatically from the inventory items whose usage rule applies to its service type.
+        String successMessage = "Order advanced to " + nextStatus;
+        if ("WASHING".equals(nextStatus) || "CLEANING".equals(nextStatus)) {
+            com.cleantrack.laundry_system.service.InventoryStockService.AutoConsumeResult stock =
+                    inventoryStockService.consumeForStage(order, nextStatus, user.getFullName());
+            if (!stock.getDeducted().isEmpty()) {
+                successMessage += ". Supplies used: " + String.join(", ", stock.getDeducted()) + ".";
+            }
+            if (!stock.getShortages().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error",
+                        "Not enough stock to deduct automatically for: " + String.join("; ", stock.getShortages())
+                                + ". Please restock and adjust the inventory manually.");
+            }
+        }
 
         redirectAttributes.addFlashAttribute("success", successMessage);
         return "redirect:/queue";
@@ -268,11 +259,6 @@ public class WorkQueueController {
         path.add("READY FOR COLLECTION");
         path.add("Order Completed");
         return path;
-    }
-
-    // Stages at which the employee must record the supplies used.
-    private boolean isUsageStage(String stage) {
-        return "WASHING".equals(stage) || "CLEANING".equals(stage);
     }
 
     private String getNextStage(String current, String serviceType) {

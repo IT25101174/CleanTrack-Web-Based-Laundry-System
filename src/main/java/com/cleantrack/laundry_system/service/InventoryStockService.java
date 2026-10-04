@@ -10,16 +10,12 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Central place for reducing stock. It is used by the manual "Use" action in the inventory page
- * and by the work queue, where the employee records the supplies used when an order reaches the
- * washing stage (UC-05, extension 3a).
+ * and by the work queue, which deducts supplies automatically when an order reaches the washing
+ * stage (UC-05, extension 3a).
  */
 @Service
 public class InventoryStockService {
@@ -34,42 +30,18 @@ public class InventoryStockService {
         this.auditLogRepository = auditLogRepository;
     }
 
-    /** Result of recording the supplies used at a processing stage. */
-    public static class StageUsageResult {
-        private final String error;
-        private final List<String> used;
+    /** Result of the automatic deduction for one order. */
+    public static class AutoConsumeResult {
+        private final List<String> deducted = new ArrayList<>();
+        private final List<String> shortages = new ArrayList<>();
 
-        private StageUsageResult(String error, List<String> used) {
-            this.error = error;
-            this.used = used;
+        public List<String> getDeducted() {
+            return deducted;
         }
 
-        static StageUsageResult failure(String error) {
-            return new StageUsageResult(error, new ArrayList<>());
+        public List<String> getShortages() {
+            return shortages;
         }
-
-        static StageUsageResult success(List<String> used) {
-            return new StageUsageResult(null, used);
-        }
-
-        public boolean isSuccess() {
-            return error == null;
-        }
-
-        public String getError() {
-            return error;
-        }
-
-        public List<String> getUsed() {
-            return used;
-        }
-    }
-
-    /** All inventory items, sorted by name (used to build the "supplies used" form). */
-    public List<InventoryItem> listItems() {
-        return inventoryItemRepository.findAll().stream()
-                .sorted(Comparator.comparing(InventoryItem::getItemName, String.CASE_INSENSITIVE_ORDER))
-                .toList();
     }
 
     /**
@@ -98,73 +70,38 @@ public class InventoryStockService {
     }
 
     /**
-     * Records the supplies the employee used when an order reaches a processing stage (washing or
-     * cleaning). The employee enters a quantity for each item that was used; blank and zero entries are
-     * ignored, and at least one item with a quantity above zero is required. Everything is checked first,
-     * and if any deduction fails part-way the earlier ones are put back, so the stock is either fully
-     * updated or left untouched.
+     * Automatically deducts the supplies for an order that has just reached a processing stage
+     * (washing, or cleaning for dry clean). Only items that have a usage rule applying to the order's
+     * service type are deducted. The amount comes from the item's rule: either 1 unit per N garments
+     * (rounded up) or a fixed number of units per order. A shortage never blocks the order: that item is
+     * left unchanged and reported in the result and the audit log.
      */
-    public StageUsageResult recordStageUsage(Order order, String stageName, List<Long> itemIds,
-                                             List<String> quantities, String actor) {
-        Map<Long, Integer> requested = new LinkedHashMap<>();
-        int count = Math.min(itemIds == null ? 0 : itemIds.size(), quantities == null ? 0 : quantities.size());
-        for (int i = 0; i < count; i++) {
-            String raw = quantities.get(i) == null ? "" : quantities.get(i).trim();
-            if (raw.isEmpty()) {
+    public AutoConsumeResult consumeForStage(Order order, String stageName, String actor) {
+        AutoConsumeResult result = new AutoConsumeResult();
+        int garments = order.getQuantity() == null ? 0 : order.getQuantity();
+        if (garments <= 0) {
+            return result;
+        }
+
+        String reason = "auto, " + stageName + " stage, order " + order.getTrackingId() + ", " + garments + " garments";
+        for (InventoryItem item : inventoryItemRepository.findByUsageBasisIsNotNull()) {
+            if (!item.isAutoUse() || !item.appliesTo(order.getServiceType())) {
                 continue;
             }
-            int amount;
-            try {
-                amount = Integer.parseInt(raw);
-            } catch (NumberFormatException e) {
-                return StageUsageResult.failure("Supplies used must be whole numbers.");
-            }
-            if (amount < 0) {
-                return StageUsageResult.failure("Supplies used cannot be negative.");
-            }
-            if (amount == 0) {
+            int needed = item.unitsFor(garments);
+            if (needed <= 0) {
                 continue;
             }
-            requested.merge(itemIds.get(i), amount, (a, b) -> (int) Math.min((long) a + b, Integer.MAX_VALUE));
-        }
 
-        if (requested.isEmpty()) {
-            return StageUsageResult.failure("Enter the supplies used for the " + stageName.toLowerCase()
-                    + " stage (at least one item) before advancing this order.");
-        }
-
-        Map<InventoryItem, Integer> toUse = new LinkedHashMap<>();
-        for (Map.Entry<Long, Integer> entry : requested.entrySet()) {
-            Optional<InventoryItem> found = inventoryItemRepository.findById(entry.getKey());
-            if (found.isEmpty()) {
-                return StageUsageResult.failure("One of the selected inventory items no longer exists.");
+            if (consume(item, needed, reason, actor)) {
+                result.getDeducted().add(item.getItemName() + " -" + needed);
+            } else {
+                result.getShortages().add(item.getItemName() + " (needed " + needed
+                        + ", available " + item.getQuantity() + ")");
+                auditLogRepository.save(new AuditLog("Automatic stock deduction skipped for order "
+                        + order.getTrackingId() + ": not enough " + item.getItemName()));
             }
-            InventoryItem item = found.get();
-            if (item.getQuantity() < entry.getValue()) {
-                return StageUsageResult.failure("Not enough " + item.getItemName() + " in stock (available "
-                        + item.getQuantity() + ", entered " + entry.getValue() + ").");
-            }
-            toUse.put(item, entry.getValue());
         }
-
-        String reason = stageName + " stage, order " + order.getTrackingId();
-        Map<InventoryItem, Integer> done = new LinkedHashMap<>();
-        for (Map.Entry<InventoryItem, Integer> entry : toUse.entrySet()) {
-            if (!consume(entry.getKey(), entry.getValue(), reason, actor)) {
-                for (Map.Entry<InventoryItem, Integer> undo : done.entrySet()) {
-                    inventoryItemRepository.addStock(undo.getKey().getId(), undo.getValue(),
-                            Integer.MAX_VALUE - undo.getValue(), LocalDateTime.now());
-                }
-                return StageUsageResult.failure("Stock for " + entry.getKey().getItemName()
-                        + " changed while saving. Please try again.");
-            }
-            done.put(entry.getKey(), entry.getValue());
-        }
-
-        List<String> summary = new ArrayList<>();
-        for (Map.Entry<InventoryItem, Integer> entry : done.entrySet()) {
-            summary.add(entry.getKey().getItemName() + " -" + entry.getValue());
-        }
-        return StageUsageResult.success(summary);
+        return result;
     }
 }
