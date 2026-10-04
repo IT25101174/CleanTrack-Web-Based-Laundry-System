@@ -107,9 +107,10 @@
     var countLabel = $('#filterCount');
     var noResults = $('#noResults');
     var state = { query: '', category: '', chip: 'all', view: 'table' };
+    var narrow = window.matchMedia ? window.matchMedia('(max-width: 991px)') : { matches: false };
 
     function activeView() {
-        return viewBoxes.length ? state.view : null;
+        return viewBoxes.length ? (narrow.matches ? 'cards' : state.view) : null;
     }
 
     function applyFilters() {
@@ -141,14 +142,19 @@
         });
     }
 
-    function setView(view) {
-        state.view = view;
+    function showView() {
+        var view = narrow.matches ? 'cards' : state.view;
         viewBoxes.forEach(function (box) { box.hidden = box.getAttribute('data-view') !== view; });
         viewButtons.forEach(function (button) {
             button.classList.toggle('active', button.getAttribute('data-set-view') === view);
         });
-        writePref('view.' + pageKey, view);
         applyFilters();
+    }
+
+    function setView(view) {
+        state.view = view;
+        writePref('view.' + pageKey, view);
+        showView();
     }
 
     if (categorySelect) {
@@ -193,10 +199,10 @@
 
     if (viewBoxes.length) {
         var saved = readPref('view.' + pageKey);
-        if (saved !== 'table' && saved !== 'cards') {
-            saved = window.innerWidth < 768 ? 'cards' : 'table';
-        }
-        setView(saved);
+        if (saved !== 'table' && saved !== 'cards') { saved = 'table'; }
+        state.view = saved;
+        showView();
+        if (narrow.addEventListener) { narrow.addEventListener('change', showView); }
     } else {
         applyFilters();
     }
