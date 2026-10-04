@@ -1,18 +1,22 @@
 package com.cleantrack.laundry_system.controller;
 
 import com.cleantrack.laundry_system.model.AuditLog;
+import com.cleantrack.laundry_system.model.InventoryItem;
 import com.cleantrack.laundry_system.model.Supplier;
 import com.cleantrack.laundry_system.model.User;
 import com.cleantrack.laundry_system.repository.AuditLogRepository;
+import com.cleantrack.laundry_system.repository.InventoryItemRepository;
 import com.cleantrack.laundry_system.repository.SupplierRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -25,11 +29,15 @@ public class SupplierController {
 
     private final SupplierRepository supplierRepository;
     private final AuditLogRepository auditLogRepository;
+    private final InventoryItemRepository inventoryItemRepository;
 
     @Autowired
-    public SupplierController(SupplierRepository supplierRepository, AuditLogRepository auditLogRepository) {
+    public SupplierController(SupplierRepository supplierRepository,
+                              AuditLogRepository auditLogRepository,
+                              InventoryItemRepository inventoryItemRepository) {
         this.supplierRepository = supplierRepository;
         this.auditLogRepository = auditLogRepository;
+        this.inventoryItemRepository = inventoryItemRepository;
     }
 
     @GetMapping
@@ -86,7 +94,9 @@ public class SupplierController {
         return "redirect:/suppliers";
     }
 
+    // Transactional so the supplier and the inventory items that use its name are renamed together.
     @PostMapping("/edit/{id}")
+    @Transactional
     public String editSupplier(@PathVariable Long id,
                                @RequestParam String supplierName,
                                @RequestParam(required = false) String contactPerson,
@@ -129,6 +139,7 @@ public class SupplierController {
         }
 
         Supplier supplier = existing.get();
+        String oldName = supplier.getSupplierName();
         supplier.setSupplierName(name);
         supplier.setContactPerson(contact);
         supplier.setPhone(phoneValue);
@@ -136,6 +147,17 @@ public class SupplierController {
         supplier.setAddress(addressValue);
         supplier.setUpdatedAt(LocalDateTime.now());
         supplierRepository.save(supplier);
+
+        // Inventory items store the supplier name, so keep them in step with a rename.
+        if (oldName != null && !oldName.equals(name)) {
+            List<InventoryItem> linkedItems = inventoryItemRepository.findBySupplierIgnoreCase(oldName);
+            for (InventoryItem linked : linkedItems) {
+                linked.setSupplier(name);
+                linked.setUpdatedAt(LocalDateTime.now());
+            }
+            inventoryItemRepository.saveAll(linkedItems);
+        }
+
         auditLogRepository.save(new AuditLog("Supplier updated: " + name + " by " + user.getFullName()));
         redirectAttributes.addFlashAttribute("success", "Supplier updated successfully.");
         return "redirect:/suppliers";
