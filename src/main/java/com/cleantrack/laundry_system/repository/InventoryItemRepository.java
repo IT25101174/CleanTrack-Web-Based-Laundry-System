@@ -10,11 +10,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface InventoryItemRepository extends JpaRepository<InventoryItem, Long> {
 
     List<InventoryItem> findBySupplierIgnoreCase(String supplier);
+
+    boolean existsByItemNameIgnoreCase(String itemName);
+
+    Optional<InventoryItem> findFirstByItemNameIgnoreCase(String itemName);
+
+    // Items that have an automatic-use rule (1 unit per N garments).
+    List<InventoryItem> findByGarmentsPerUnitGreaterThan(Integer value);
+
+    // Items whose quantity has fallen below their safety threshold (used by the dashboard alert).
+    @Query("select i from InventoryItem i where i.quantity < i.lowStockThreshold order by i.itemName")
+    List<InventoryItem> findLowStockItems();
 
     // Adds stock only if the current quantity is at most maxCurrent (Integer.MAX_VALUE - amount),
     // which prevents integer overflow. Returns the number of rows updated (0 or 1).
