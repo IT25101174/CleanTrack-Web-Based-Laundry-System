@@ -229,6 +229,7 @@
                         <i class="fa-solid fa-box me-2 text-muted"></i>
                         <span class="fw-bold" th:text="${item.itemName}"></span><br>
                         <small class="text-muted" th:text="${item.unitPrice != null ? 'LKR ' + item.unitPrice + (item.unit != null ? ' / ' + item.unit : '') : ''}"></small>
+                        <div class="small opacity-50" th:if="${item.autoUse}" th:text="'Auto-use: ' + ${item.usageSummary}"></div>
                     </td>
                     <td><span class="badge bg-secondary rounded-pill" th:text="${item.category}"></span></td>
                     <td class="text-muted">
@@ -357,6 +358,28 @@
                                 <input type="number" name="quantity" class="form-control" th:value="${item.quantity}" required min="0">
                             </div>
                         </div>
+                        <hr class="my-2">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Automatic use (washing stage)</label>
+                                <select name="usageBasis" class="form-control">
+                                    <option value="MANUAL" th:selected="${item.usageBasis == null or item.usageBasis == 'MANUAL'}">Manual only</option>
+                                    <option value="PER_GARMENTS" th:selected="${item.usageBasis == 'PER_GARMENTS'}">1 unit per N garments</option>
+                                    <option value="PER_ORDER" th:selected="${item.usageBasis == 'PER_ORDER'}">Fixed units per order</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">N (garments) or units per order</label>
+                                <input type="number" name="usageAmount" min="1" class="form-control" placeholder="e.g. 20" th:value="${item.usageAmount}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted d-block">Applies to services</label>
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="usageServices" value="WASH_ONLY" th:checked="${item.appliesTo('WASH_ONLY')}"> <label class="form-check-label">Wash Only</label></div>
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="usageServices" value="WASH_IRON" th:checked="${item.appliesTo('WASH_IRON')}"> <label class="form-check-label">Wash &amp; Iron</label></div>
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="usageServices" value="DRY_CLEAN" th:checked="${item.appliesTo('DRY_CLEAN')}"> <label class="form-check-label">Dry Clean</label></div>
+                            <div class="form-text">Deducted automatically when an order reaches the washing (or cleaning) stage. Leave on Manual only for items such as stain remover.</div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
@@ -422,6 +445,28 @@
                             <div class="form-text" th:if="${#lists.isEmpty(suppliers)}">No suppliers yet. Add one on the Suppliers page first.</div>
                         </div>
                     </div>
+                        <hr class="my-2">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Automatic use (washing stage)</label>
+                                <select name="usageBasis" class="form-control">
+                                    <option value="MANUAL">Manual only</option>
+                                    <option value="PER_GARMENTS">1 unit per N garments</option>
+                                    <option value="PER_ORDER">Fixed units per order</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">N (garments) or units per order</label>
+                                <input type="number" name="usageAmount" min="1" class="form-control" placeholder="e.g. 20">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted d-block">Applies to services</label>
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="usageServices" value="WASH_ONLY"> <label class="form-check-label">Wash Only</label></div>
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="usageServices" value="WASH_IRON"> <label class="form-check-label">Wash &amp; Iron</label></div>
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="usageServices" value="DRY_CLEAN"> <label class="form-check-label">Dry Clean</label></div>
+                            <div class="form-text">Deducted automatically when an order reaches the washing (or cleaning) stage. Leave on Manual only for items such as stain remover.</div>
+                        </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>

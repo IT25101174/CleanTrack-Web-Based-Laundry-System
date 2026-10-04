@@ -28,6 +28,7 @@ import java.util.Optional;
 @RequestMapping("/inventory")
 public class InventoryController {
 
+    private static final int MAX_USAGE_AMOUNT = 100_000;
     private static final String MANAGE_DENIED_MESSAGE = "Only the Branch Supervisor can manage inventory.";
 
     private final InventoryItemRepository inventoryItemRepository;
@@ -90,6 +91,9 @@ public class InventoryController {
                           @RequestParam(required = false) String unit,
                           @RequestParam(required = false) String supplier,
                           @RequestParam(required = false) String unitPrice,
+                          @RequestParam(required = false) String usageBasis,
+                          @RequestParam(required = false) String usageAmount,
+                          @RequestParam(required = false) java.util.List<String> usageServices,
                           HttpSession session,
                           RedirectAttributes redirectAttributes) {
         User user = (User) session.getAttribute("user");
@@ -130,6 +134,12 @@ public class InventoryController {
             return "redirect:/inventory";
         }
 
+        UsageRule rule = parseUsageRule(usageBasis, usageAmount, usageServices);
+        if (rule.error != null) {
+            redirectAttributes.addFlashAttribute("error", rule.error);
+            return "redirect:/inventory";
+        }
+
         // The supplier must be one registered under Suppliers (a new item has no earlier value to keep).
         String resolvedSupplier = null;
         if (supplierValue != null) {
@@ -147,6 +157,7 @@ public class InventoryController {
                 parseNonNegativeInt(quantity),
                 parseNonNegativeInt(lowStockThreshold),
                 categoryValue, unitValue, resolvedSupplier, parsedPrice);
+        rule.applyTo(item);
         inventoryItemRepository.save(item);
         auditLogRepository.save(new AuditLog("Inventory item added: " + item.getItemName() + " by " + user.getFullName()));
         redirectAttributes.addFlashAttribute("success", "Item added successfully.");
@@ -162,6 +173,9 @@ public class InventoryController {
                            @RequestParam(required = false) String unit,
                            @RequestParam(required = false) String supplier,
                            @RequestParam(required = false) String unitPrice,
+                           @RequestParam(required = false) String usageBasis,
+                           @RequestParam(required = false) String usageAmount,
+                           @RequestParam(required = false) java.util.List<String> usageServices,
                            HttpSession session,
                            RedirectAttributes redirectAttributes) {
         User user = (User) session.getAttribute("user");
@@ -214,6 +228,12 @@ public class InventoryController {
             return "redirect:/inventory";
         }
 
+        UsageRule rule = parseUsageRule(usageBasis, usageAmount, usageServices);
+        if (rule.error != null) {
+            redirectAttributes.addFlashAttribute("error", rule.error);
+            return "redirect:/inventory";
+        }
+
         // A changed supplier must be a registered one. An unchanged value is kept as it is,
         // so items created before supplier management existed can still be edited.
         String resolvedSupplier = supplierValue;
@@ -237,6 +257,7 @@ public class InventoryController {
         item.setUnit(unitValue);
         item.setSupplier(resolvedSupplier);
         item.setUnitPrice(parsedPrice);
+        rule.applyTo(item);
         item.setUpdatedAt(LocalDateTime.now());
         inventoryItemRepository.save(item);
 
@@ -357,6 +378,65 @@ public class InventoryController {
 
         redirectAttributes.addFlashAttribute("success", "Successfully recorded usage of " + item.getItemName());
         return "redirect:/inventory";
+    }
+
+    // The automatic-use rule typed into the add/edit form.
+    private static class UsageRule {
+        String basis;
+        Integer amount;
+        String services;
+        String error;
+
+        void applyTo(InventoryItem item) {
+            item.setUsageBasis(basis);
+            item.setUsageAmount(amount);
+            item.setUsageServices(services);
+        }
+    }
+
+    // Reads and validates the usage rule. "Manual only" (or no choice) clears the rule.
+    private UsageRule parseUsageRule(String basis, String amount, java.util.List<String> services) {
+        UsageRule rule = new UsageRule();
+        if (basis == null || basis.isBlank() || "MANUAL".equals(basis)) {
+            rule.basis = "MANUAL";
+            return rule;
+        }
+        if (!"PER_GARMENTS".equals(basis) && !"PER_ORDER".equals(basis)) {
+            rule.error = "Choose a valid automatic-use option.";
+            return rule;
+        }
+        Integer parsedAmount = null;
+        try {
+            if (amount != null && !amount.isBlank()) {
+                int value = Integer.parseInt(amount.trim());
+                if (value >= 1 && value <= MAX_USAGE_AMOUNT) {
+                    parsedAmount = value;
+                }
+            }
+        } catch (NumberFormatException ignored) {
+            // handled below
+        }
+        if (parsedAmount == null) {
+            rule.error = "Automatic use amount must be a whole number between 1 and " + MAX_USAGE_AMOUNT + ".";
+            return rule;
+        }
+        java.util.List<String> allowed = java.util.List.of("WASH_ONLY", "WASH_IRON", "DRY_CLEAN");
+        java.util.List<String> chosen = new java.util.ArrayList<>();
+        if (services != null) {
+            for (String service : services) {
+                if (service != null && allowed.contains(service.trim()) && !chosen.contains(service.trim())) {
+                    chosen.add(service.trim());
+                }
+            }
+        }
+        if (chosen.isEmpty()) {
+            rule.error = "Select at least one service for the automatic use rule.";
+            return rule;
+        }
+        rule.basis = basis;
+        rule.amount = parsedAmount;
+        rule.services = String.join(",", chosen);
+        return rule;
     }
 
     private boolean isCustomer(User user) {

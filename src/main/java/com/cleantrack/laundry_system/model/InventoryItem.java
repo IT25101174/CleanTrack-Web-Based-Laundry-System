@@ -31,6 +31,20 @@ public class InventoryItem {
     @Column(name = "unit_price", precision = 10, scale = 2)
     private java.math.BigDecimal unitPrice;
 
+    // Automatic-use rule, applied when an order reaches the washing (cleaning) stage.
+    // usageBasis: MANUAL (or null) = never deducted automatically,
+    //             PER_GARMENTS   = 1 unit for every usageAmount garments (rounded up),
+    //             PER_ORDER      = usageAmount units for each order.
+    // usageServices: comma-separated service types the rule applies to (WASH_ONLY, WASH_IRON, DRY_CLEAN).
+    @Column(name = "usage_basis", length = 20)
+    private String usageBasis;
+
+    @Column(name = "usage_amount")
+    private Integer usageAmount;
+
+    @Column(name = "usage_services", length = 60)
+    private String usageServices;
+
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
@@ -82,6 +96,86 @@ public class InventoryItem {
     // True when the quantity has fallen below the safety threshold (not mapped to a column).
     public boolean isLowStock() {
         return quantity != null && lowStockThreshold != null && quantity < lowStockThreshold;
+    }
+
+    public String getUsageBasis() {
+        return usageBasis;
+    }
+
+    public void setUsageBasis(String usageBasis) {
+        this.usageBasis = usageBasis;
+    }
+
+    public Integer getUsageAmount() {
+        return usageAmount;
+    }
+
+    public void setUsageAmount(Integer usageAmount) {
+        this.usageAmount = usageAmount;
+    }
+
+    public String getUsageServices() {
+        return usageServices;
+    }
+
+    public void setUsageServices(String usageServices) {
+        this.usageServices = usageServices;
+    }
+
+    // True when the item has a complete automatic-use rule (not mapped to a column).
+    public boolean isAutoUse() {
+        return ("PER_GARMENTS".equals(usageBasis) || "PER_ORDER".equals(usageBasis))
+                && usageAmount != null && usageAmount > 0
+                && usageServices != null && !usageServices.isBlank();
+    }
+
+    // Does the rule apply to this service type? A missing or unknown service type counts as WASH_ONLY,
+    // the same default the work queue uses.
+    public boolean appliesTo(String serviceType) {
+        if (usageServices == null || usageServices.isBlank()) {
+            return false;
+        }
+        String type = serviceType == null ? "" : serviceType.trim().toUpperCase();
+        if (!type.equals("WASH_IRON") && !type.equals("DRY_CLEAN")) {
+            type = "WASH_ONLY";
+        }
+        for (String service : usageServices.split(",")) {
+            if (service.trim().equals(type)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Units to deduct for an order with this many garments.
+    public int unitsFor(int garments) {
+        if (!isAutoUse() || garments <= 0) {
+            return 0;
+        }
+        if ("PER_ORDER".equals(usageBasis)) {
+            return usageAmount;
+        }
+        return (int) Math.ceil(garments / (double) usageAmount);
+    }
+
+    // Short description shown on the inventory page, for example "1 per 20 garments (Wash Only, Wash & Iron)".
+    public String getUsageSummary() {
+        if (!isAutoUse()) {
+            return null;
+        }
+        java.util.List<String> names = new java.util.ArrayList<>();
+        for (String service : usageServices.split(",")) {
+            switch (service.trim()) {
+                case "WASH_ONLY": names.add("Wash Only"); break;
+                case "WASH_IRON": names.add("Wash & Iron"); break;
+                case "DRY_CLEAN": names.add("Dry Clean"); break;
+                default: break;
+            }
+        }
+        String basis = "PER_ORDER".equals(usageBasis)
+                ? usageAmount + " per order"
+                : "1 per " + usageAmount + " garments";
+        return basis + " (" + String.join(", ", names) + ")";
     }
 
     public LocalDateTime getUpdatedAt() {

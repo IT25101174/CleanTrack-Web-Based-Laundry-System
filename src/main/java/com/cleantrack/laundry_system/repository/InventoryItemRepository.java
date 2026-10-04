@@ -19,6 +19,9 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
 
     boolean existsByItemNameIgnoreCase(String itemName);
 
+    // Items that have an automatic-use rule set (the service filters out incomplete rules).
+    List<InventoryItem> findByUsageBasisIsNotNull();
+
     Optional<InventoryItem> findFirstByItemNameIgnoreCase(String itemName);
 
     // Items whose quantity has fallen below their safety threshold (used by the dashboard alert).
