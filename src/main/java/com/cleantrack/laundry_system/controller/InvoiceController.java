@@ -24,12 +24,14 @@ public class InvoiceController {
     private final InvoiceRepository invoiceRepository;
     private final OrderRepository orderRepository;
     private final com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository;
+    private final com.cleantrack.laundry_system.service.InventoryStockService inventoryStockService;
 
     @Autowired
-    public InvoiceController(InvoiceRepository invoiceRepository, OrderRepository orderRepository, com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository) {
+    public InvoiceController(InvoiceRepository invoiceRepository, OrderRepository orderRepository, com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository, com.cleantrack.laundry_system.service.InventoryStockService inventoryStockService) {
         this.invoiceRepository = invoiceRepository;
         this.orderRepository = orderRepository;
         this.auditLogRepository = auditLogRepository;
+        this.inventoryStockService = inventoryStockService;
     }
 
     @GetMapping
@@ -133,6 +135,7 @@ public class InvoiceController {
                     invoice.setStatus("PAID");
                     invoiceRepository.save(invoice);
                     auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Invoice paid for Order ID: " + invoice.getOrderId() + " by " + user.getFullName()));
+                    deductStockForPaidOrder(invoice, user);
                 } else {
                     return "redirect:/invoices?error=InsufficientPayment";
                 }
@@ -164,6 +167,7 @@ public class InvoiceController {
                 invoice.setAmountPaid(invoice.getTotalAmount());
                 invoiceRepository.save(invoice);
                 auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Bank transfer approved for Invoice ID: " + invoice.getId() + " by " + user.getFullName()));
+                deductStockForPaidOrder(invoice, user);
             } else {
                 return "redirect:/invoices?error=InvalidStatusForApproval";
             }
@@ -188,5 +192,12 @@ public class InvoiceController {
         }
         
         return "redirect:/invoices";
+    }
+
+    // UC-05 extension 3a: once an order's payment is confirmed (counter payment or approved bank transfer),
+    // its stock is deducted automatically from every inventory item that has an auto-use rule.
+    private void deductStockForPaidOrder(Invoice invoice, User user) {
+        orderRepository.findById(invoice.getOrderId()).ifPresent(order ->
+                inventoryStockService.consumeForOrder(order, user.getFullName()));
     }
 }

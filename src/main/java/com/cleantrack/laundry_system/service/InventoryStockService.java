@@ -3,9 +3,12 @@ package com.cleantrack.laundry_system.service;
 import com.cleantrack.laundry_system.model.AuditLog;
 import com.cleantrack.laundry_system.model.InventoryItem;
 import com.cleantrack.laundry_system.model.Order;
+import com.cleantrack.laundry_system.model.OrderStockUsage;
 import com.cleantrack.laundry_system.repository.AuditLogRepository;
 import com.cleantrack.laundry_system.repository.InventoryItemRepository;
+import com.cleantrack.laundry_system.repository.OrderStockUsageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,22 +17,25 @@ import java.util.List;
 
 /**
  * Central place for reducing stock, used by the manual "Use" action and by the
- * automatic deduction that runs when an order is accepted (UC-05, extension 3a).
+ * automatic deduction that runs when an order's payment is confirmed (UC-05, extension 3a).
  */
 @Service
 public class InventoryStockService {
 
     private final InventoryItemRepository inventoryItemRepository;
     private final AuditLogRepository auditLogRepository;
+    private final OrderStockUsageRepository orderStockUsageRepository;
 
     @Autowired
     public InventoryStockService(InventoryItemRepository inventoryItemRepository,
-                                 AuditLogRepository auditLogRepository) {
+                                 AuditLogRepository auditLogRepository,
+                                 OrderStockUsageRepository orderStockUsageRepository) {
         this.inventoryItemRepository = inventoryItemRepository;
         this.auditLogRepository = auditLogRepository;
+        this.orderStockUsageRepository = orderStockUsageRepository;
     }
 
-    /** Result of the automatic deduction for one accepted order. */
+    /** Result of the automatic deduction for one confirmed order. */
     public static class AutoConsumeResult {
         private final List<String> deducted = new ArrayList<>();
         private final List<String> shortages = new ArrayList<>();
@@ -69,14 +75,23 @@ public class InventoryStockService {
     }
 
     /**
-     * Automatically deducts stock for an accepted order. Every item with an auto-use rule
-     * ("1 unit per N garments") is reduced by ceil(garments / N). A shortage never blocks
-     * the order; it is returned so the caller can warn the user.
+     * Automatically deducts stock for an order whose payment has been confirmed. Every item with an
+     * auto-use rule ("1 unit per N garments") is reduced by ceil(garments / N). A shortage never
+     * blocks the payment; it is returned and written to the audit log. Each order is processed only
+     * once, no matter how many times its payment status changes.
      */
     public AutoConsumeResult consumeForOrder(Order order, String actor) {
         AutoConsumeResult result = new AutoConsumeResult();
         Integer garments = order.getQuantity();
-        if (garments == null || garments <= 0) {
+        if (order.getId() == null || garments == null || garments <= 0) {
+            return result;
+        }
+        if (orderStockUsageRepository.existsByOrderId(order.getId())) {
+            return result;
+        }
+        try {
+            orderStockUsageRepository.save(new OrderStockUsage(order.getId()));
+        } catch (DataIntegrityViolationException alreadyProcessed) {
             return result;
         }
 
@@ -87,7 +102,7 @@ public class InventoryStockService {
                 continue;
             }
 
-            String reason = "auto, order " + order.getTrackingId() + ", " + garments + " garments";
+            String reason = "auto, payment confirmed for order " + order.getTrackingId() + ", " + garments + " garments";
             if (consume(item, needed, reason, actor)) {
                 result.getDeducted().add(item.getItemName() + " -" + needed);
             } else {
