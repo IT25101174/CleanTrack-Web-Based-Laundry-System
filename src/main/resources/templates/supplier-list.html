@@ -67,7 +67,7 @@
 
     <div class="panel">
         <div class="table-wrap">
-            <table class="table table-modern">
+            <table class="table table-modern table-stack">
                 <thead>
                 <tr>
                     <th>Supplier</th>
@@ -80,14 +80,14 @@
                 </thead>
                 <tbody>
                 <tr th:each="s : ${suppliers}" data-filter-item>
-                    <td>
+                    <td data-label="Supplier"><div class="cv">
                         <span class="cell-title"><i class="fa-solid fa-truck-field me-2 text-muted"></i><span th:text="${s.supplierName}"></span></span>
-                    </td>
-                    <td class="text-muted" th:text="${s.contactPerson != null ? s.contactPerson : '-'}"></td>
-                    <td class="text-muted" th:text="${s.phone != null ? s.phone : '-'}"></td>
-                    <td class="text-muted" th:text="${s.email != null ? s.email : '-'}"></td>
-                    <td class="text-muted" th:text="${s.address != null ? s.address : '-'}"></td>
-                    <td th:if="${canManage}">
+                    </div></td>
+                    <td class="text-muted" data-label="Contact"><div class="cv" th:text="${s.contactPerson != null ? s.contactPerson : '-'}"></div></td>
+                    <td class="text-muted" data-label="Phone"><div class="cv" th:text="${s.phone != null ? s.phone : '-'}"></div></td>
+                    <td class="text-muted" data-label="Email"><div class="cv" th:text="${s.email != null ? s.email : '-'}"></div></td>
+                    <td class="text-muted" data-label="Address"><div class="cv" th:text="${s.address != null ? s.address : '-'}"></div></td>
+                    <td th:if="${canManage}" data-label="Action"><div class="cv">
                         <div class="row-actions">
                             <button type="button" class="icon-btn" data-tip="Edit supplier" aria-label="Edit supplier"
                                     data-bs-toggle="modal" th:data-bs-target="'#supplierEditModal' + ${s.id}">
@@ -100,7 +100,7 @@
                                 </button>
                             </form>
                         </div>
-                    </td>
+                    </div></td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(suppliers)}">
                     <td th:colspan="${canManage} ? 6 : 5">

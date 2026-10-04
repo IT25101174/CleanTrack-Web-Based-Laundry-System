@@ -80,7 +80,7 @@
 
     <div class="panel">
         <div class="table-wrap">
-            <table class="table table-modern">
+            <table class="table table-modern table-stack">
                 <thead>
                 <tr>
                     <th>Order</th>
@@ -95,25 +95,25 @@
                 </thead>
                 <tbody>
                 <tr th:each="o : ${orders}" data-filter-item th:attr="data-tags=${#strings.toLowerCase(o.status)}">
-                    <td class="cell-title" th:text="${'#' + o.id}"></td>
-                    <td>
+                    <td class="cell-title" data-label="Order"><div class="cv" th:text="${'#' + o.id}"></div></td>
+                    <td data-label="Item"><div class="cv">
                         <span class="cell-title" th:text="${o.itemName}"></span>
                         <div class="cell-sub" th:if="${o.notes != null}" th:text="${o.notes}"></div>
-                    </td>
-                    <td class="text-muted" th:text="${o.supplierName != null ? o.supplierName : '-'}"></td>
-                    <td class="cell-title" th:text="${o.quantity}"></td>
-                    <td>
+                    </div></td>
+                    <td class="text-muted" data-label="Supplier"><div class="cv" th:text="${o.supplierName != null ? o.supplierName : '-'}"></div></td>
+                    <td class="cell-title" data-label="Quantity"><div class="cv" th:text="${o.quantity}"></div></td>
+                    <td data-label="Status"><div class="cv">
                         <span class="tag status-pending" th:if="${o.status == 'PENDING'}">Pending</span>
                         <span class="tag status-received" th:if="${o.status == 'RECEIVED'}">Received</span>
                         <span class="tag status-cancelled" th:if="${o.status == 'CANCELLED'}">Cancelled</span>
                         <div class="cell-sub d-lg-none" th:if="${o.receivedAtDisplay != null}" th:text="${'Received ' + o.receivedAtDisplay}"></div>
-                    </td>
-                    <td class="text-muted">
+                    </div></td>
+                    <td class="text-muted" data-label="Ordered"><div class="cv">
                         <span th:text="${o.orderedAtDisplay}"></span>
                         <div class="cell-sub" th:if="${o.orderedBy != null}" th:text="${'by ' + o.orderedBy}"></div>
-                    </td>
-                    <td class="text-muted d-none d-lg-table-cell" th:text="${o.receivedAtDisplay != null ? o.receivedAtDisplay : '-'}"></td>
-                    <td th:if="${canManage}">
+                    </div></td>
+                    <td class="text-muted d-none d-lg-table-cell" data-label="Received"><div class="cv" th:text="${o.receivedAtDisplay != null ? o.receivedAtDisplay : '-'}"></div></td>
+                    <td th:if="${canManage}" data-label="Action"><div class="cv">
                         <div class="row-actions" th:if="${o.status == 'PENDING'}">
                             <form th:action="@{/supply-orders/receive/{id}(id=${o.id})}" method="POST"
                                   th:data-confirm="'Mark order #' + ${o.id} + ' as received and add ' + ${o.quantity} + ' to ' + ${o.itemName} + ' stock?'"
@@ -126,7 +126,7 @@
                             </form>
                         </div>
                         <span class="text-muted" th:unless="${o.status == 'PENDING'}">-</span>
-                    </td>
+                    </div></td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(orders)}">
                     <td th:colspan="${canManage} ? 8 : 7">
