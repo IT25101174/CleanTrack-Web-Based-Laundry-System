@@ -1,8 +1,8 @@
-package com.cleantrack.controller;
+package com.cleantrack.laundry_system.controller;
 
-import com.cleantrack.model.Role;
-import com.cleantrack.model.User;
-import com.cleantrack.repository.UserRepository;
+import com.cleantrack.laundry_system.model.Role;
+import com.cleantrack.laundry_system.model.User;
+import com.cleantrack.laundry_system.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,8 +1,8 @@
-package com.cleantrack.controller;
+package com.cleantrack.laundry_system.controller;
 
-import com.cleantrack.model.Order;
-import com.cleantrack.model.User;
-import com.cleantrack.repository.OrderRepository;
+import com.cleantrack.laundry_system.model.Order;
+import com.cleantrack.laundry_system.model.User;
+import com.cleantrack.laundry_system.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,13 +18,13 @@ import java.util.Optional;
 public class OrderController {
 
     private final OrderRepository orderRepository;
-    private final com.cleantrack.repository.InvoiceRepository invoiceRepository;
-    private final com.cleantrack.repository.AuditLogRepository auditLogRepository;
+    private final com.cleantrack.laundry_system.repository.InvoiceRepository invoiceRepository;
+    private final com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository;
 
     @Autowired
     public OrderController(OrderRepository orderRepository,
-            com.cleantrack.repository.InvoiceRepository invoiceRepository,
-            com.cleantrack.repository.AuditLogRepository auditLogRepository) {
+            com.cleantrack.laundry_system.repository.InvoiceRepository invoiceRepository,
+            com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository) {
         this.orderRepository = orderRepository;
         this.invoiceRepository = invoiceRepository;
         this.auditLogRepository = auditLogRepository;
@@ -111,7 +111,7 @@ public class OrderController {
                 java.math.RoundingMode.HALF_UP);
         java.math.BigDecimal totalAmount = subtotal.add(taxAmount);
 
-        com.cleantrack.model.Invoice invoice = new com.cleantrack.model.Invoice(savedOrder.getId(), subtotal, taxAmount,
+        com.cleantrack.laundry_system.model.Invoice invoice = new com.cleantrack.laundry_system.model.Invoice(savedOrder.getId(), subtotal, taxAmount,
                 totalAmount, "UNPAID");
         invoice.setPaymentMethod(paymentMethod);
 
@@ -143,7 +143,7 @@ public class OrderController {
         // Save the generated invoice
         invoiceRepository.save(invoice);
         
-        auditLogRepository.save(new com.cleantrack.model.AuditLog("Order created: " + savedOrder.getTrackingId() + " by " + user.getFullName()));
+        auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Order created: " + savedOrder.getTrackingId() + " by " + user.getFullName()));
 
         redirectAttributes.addFlashAttribute("success", "Order created! Please wait for admin approval on your Bank Transfer. Tracking ID: " + savedOrder.getTrackingId());
 
@@ -197,7 +197,7 @@ public class OrderController {
         existingOrder.setServiceType(updatedOrder.getServiceType());
 
         orderRepository.save(existingOrder);
-        auditLogRepository.save(new com.cleantrack.model.AuditLog("Order updated: " + existingOrder.getTrackingId() + " by " + user.getFullName()));
+        auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Order updated: " + existingOrder.getTrackingId() + " by " + user.getFullName()));
         redirectAttributes.addFlashAttribute("success", "Order updated successfully!");
 
         return "redirect:/orders";
@@ -222,7 +222,7 @@ public class OrderController {
 
         order.setStatus("Cancelled");
         orderRepository.save(order);
-        auditLogRepository.save(new com.cleantrack.model.AuditLog("Order cancelled: " + order.getTrackingId() + " by " + user.getFullName()));
+        auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Order cancelled: " + order.getTrackingId() + " by " + user.getFullName()));
         redirectAttributes.addFlashAttribute("success", "Order cancelled successfully!");
 
         return "redirect:/orders";

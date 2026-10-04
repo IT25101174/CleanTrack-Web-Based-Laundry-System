@@ -1,6 +1,6 @@
-package com.cleantrack.repository;
+package com.cleantrack.laundry_system.repository;
 
-import com.cleantrack.model.Order;
+import com.cleantrack.laundry_system.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,10 +1,10 @@
-package com.cleantrack.controller;
+package com.cleantrack.laundry_system.controller;
 
-import com.cleantrack.model.Invoice;
-import com.cleantrack.model.Order;
-import com.cleantrack.model.User;
-import com.cleantrack.repository.InvoiceRepository;
-import com.cleantrack.repository.OrderRepository;
+import com.cleantrack.laundry_system.model.Invoice;
+import com.cleantrack.laundry_system.model.Order;
+import com.cleantrack.laundry_system.model.User;
+import com.cleantrack.laundry_system.repository.InvoiceRepository;
+import com.cleantrack.laundry_system.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,10 +23,10 @@ public class InvoiceController {
 
     private final InvoiceRepository invoiceRepository;
     private final OrderRepository orderRepository;
-    private final com.cleantrack.repository.AuditLogRepository auditLogRepository;
+    private final com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository;
 
     @Autowired
-    public InvoiceController(InvoiceRepository invoiceRepository, OrderRepository orderRepository, com.cleantrack.repository.AuditLogRepository auditLogRepository) {
+    public InvoiceController(InvoiceRepository invoiceRepository, OrderRepository orderRepository, com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository) {
         this.invoiceRepository = invoiceRepository;
         this.orderRepository = orderRepository;
         this.auditLogRepository = auditLogRepository;
@@ -132,7 +132,7 @@ public class InvoiceController {
                     invoice.setPaymentMethod(paymentMethod);
                     invoice.setStatus("PAID");
                     invoiceRepository.save(invoice);
-                    auditLogRepository.save(new com.cleantrack.model.AuditLog("Invoice paid for Order ID: " + invoice.getOrderId() + " by " + user.getFullName()));
+                    auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Invoice paid for Order ID: " + invoice.getOrderId() + " by " + user.getFullName()));
                 } else {
                     return "redirect:/invoices?error=InsufficientPayment";
                 }
@@ -163,7 +163,7 @@ public class InvoiceController {
                 invoice.setStatus("PAID");
                 invoice.setAmountPaid(invoice.getTotalAmount());
                 invoiceRepository.save(invoice);
-                auditLogRepository.save(new com.cleantrack.model.AuditLog("Bank transfer approved for Invoice ID: " + invoice.getId() + " by " + user.getFullName()));
+                auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Bank transfer approved for Invoice ID: " + invoice.getId() + " by " + user.getFullName()));
             } else {
                 return "redirect:/invoices?error=InvalidStatusForApproval";
             }
@@ -184,7 +184,7 @@ public class InvoiceController {
         Optional<Invoice> optInvoice = invoiceRepository.findById(id);
         if (optInvoice.isPresent()) {
             invoiceRepository.delete(optInvoice.get());
-            auditLogRepository.save(new com.cleantrack.model.AuditLog("Invoice ID: " + id + " was deleted by " + user.getFullName()));
+            auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Invoice ID: " + id + " was deleted by " + user.getFullName()));
         }
         
         return "redirect:/invoices";

@@ -1,7 +1,7 @@
-package com.cleantrack.controller;
+package com.cleantrack.laundry_system.controller;
 
-import com.cleantrack.repository.ComplaintRepository;
-import com.cleantrack.repository.OrderRepository;
+import com.cleantrack.laundry_system.repository.ComplaintRepository;
+import com.cleantrack.laundry_system.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,11 +15,11 @@ public class ComplaintController {
 
     private final ComplaintRepository complaintRepository;
     private final OrderRepository orderRepository;
-    private final com.cleantrack.repository.UserRepository userRepository;
-    private final com.cleantrack.repository.AuditLogRepository auditLogRepository;
+    private final com.cleantrack.laundry_system.repository.UserRepository userRepository;
+    private final com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository;
 
     @Autowired
-    public ComplaintController(ComplaintRepository complaintRepository, OrderRepository orderRepository, com.cleantrack.repository.UserRepository userRepository, com.cleantrack.repository.AuditLogRepository auditLogRepository) {
+    public ComplaintController(ComplaintRepository complaintRepository, OrderRepository orderRepository, com.cleantrack.laundry_system.repository.UserRepository userRepository, com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository) {
         this.complaintRepository = complaintRepository;
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
@@ -28,12 +28,12 @@ public class ComplaintController {
 
     @GetMapping
     public String listComplaints(HttpSession session, Model model) {
-        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
         if (user == null) {
             return "redirect:/login";
         }
         
-        java.util.List<com.cleantrack.model.Complaint> complaints;
+        java.util.List<com.cleantrack.laundry_system.model.Complaint> complaints;
         
         // PRIVACY ENFORCEMENT
         if ("CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
@@ -42,11 +42,11 @@ public class ComplaintController {
             model.addAttribute("myOrders", orderRepository.findByCustomerId(user.getId()));
         } else if ("ADMIN".equals(user.getRole() != null ? user.getRole().name() : null) || "BRANCH_SUPERVISOR".equals(user.getRole() != null ? user.getRole().name() : null)) {
             complaints = complaintRepository.findAllByOrderByCreatedAtDesc();
-            model.addAttribute("staffMembers", userRepository.findByRoleNot(com.cleantrack.model.Role.CUSTOMER));
+            model.addAttribute("staffMembers", userRepository.findByRoleNot(com.cleantrack.laundry_system.model.Role.CUSTOMER));
         } else {
             // Regular staff only see tickets assigned to them or unassigned
             complaints = complaintRepository.findAllByOrderByCreatedAtDesc(); // For MVP, let them see all, but you can filter this.
-            model.addAttribute("staffMembers", userRepository.findByRoleNot(com.cleantrack.model.Role.CUSTOMER));
+            model.addAttribute("staffMembers", userRepository.findByRoleNot(com.cleantrack.laundry_system.model.Role.CUSTOMER));
         }
         
         model.addAttribute("complaints", complaints);
@@ -60,7 +60,7 @@ public class ComplaintController {
                                   @RequestParam(required = false) String issueDescription,
                                   HttpSession session,
                                   org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
         if (user == null || !"CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             return "redirect:/login";
         }
@@ -84,15 +84,15 @@ public class ComplaintController {
         }
         
         // Ownership Validation
-        java.util.Optional<com.cleantrack.model.Order> optOrder = orderRepository.findById(orderId);
+        java.util.Optional<com.cleantrack.laundry_system.model.Order> optOrder = orderRepository.findById(orderId);
         if (optOrder.isEmpty() || optOrder.get().getCustomer() == null || !optOrder.get().getCustomer().getId().equals(user.getId())) {
             redirectAttributes.addFlashAttribute("error", "Invalid order or you do not have permission to complain about this order.");
             return "redirect:/complaints";
         }
         
-        com.cleantrack.model.Complaint complaint = new com.cleantrack.model.Complaint(optOrder.get(), user, category, issueDescription, "OPEN");
+        com.cleantrack.laundry_system.model.Complaint complaint = new com.cleantrack.laundry_system.model.Complaint(optOrder.get(), user, category, issueDescription, "OPEN");
         complaintRepository.save(complaint);
-        auditLogRepository.save(new com.cleantrack.model.AuditLog("Complaint submitted for Order ID: " + orderId + " by " + user.getFullName()));
+        auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Complaint submitted for Order ID: " + orderId + " by " + user.getFullName()));
         
         redirectAttributes.addFlashAttribute("success", "Your complaint has been submitted successfully. We will resolve it shortly.");
         return "redirect:/complaints";
@@ -100,22 +100,22 @@ public class ComplaintController {
 
     @PostMapping("/assign/{id}")
     public String assignComplaint(@PathVariable Long id, @RequestParam Long staffId, HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
         if (user == null || "CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             return "redirect:/login";
         }
         
-        java.util.Optional<com.cleantrack.model.Complaint> optComplaint = complaintRepository.findById(id);
-        java.util.Optional<com.cleantrack.model.User> optStaff = userRepository.findById(staffId);
+        java.util.Optional<com.cleantrack.laundry_system.model.Complaint> optComplaint = complaintRepository.findById(id);
+        java.util.Optional<com.cleantrack.laundry_system.model.User> optStaff = userRepository.findById(staffId);
         
         if (optComplaint.isPresent() && optStaff.isPresent()) {
-            com.cleantrack.model.Complaint c = optComplaint.get();
+            com.cleantrack.laundry_system.model.Complaint c = optComplaint.get();
             c.setAssignedStaff(optStaff.get());
             if ("OPEN".equals(c.getStatus())) {
                 c.setStatus("IN_PROGRESS");
             }
             complaintRepository.save(c);
-            auditLogRepository.save(new com.cleantrack.model.AuditLog("Complaint ID " + id + " assigned to " + optStaff.get().getFullName() + " by " + user.getFullName()));
+            auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Complaint ID " + id + " assigned to " + optStaff.get().getFullName() + " by " + user.getFullName()));
             redirectAttributes.addFlashAttribute("success", "Ticket assigned to " + optStaff.get().getFullName());
         }
         return "redirect:/complaints";
@@ -123,14 +123,14 @@ public class ComplaintController {
 
     @PostMapping("/resolve/{id}")
     public String resolveComplaint(@PathVariable Long id, @RequestParam String resolutionNotes, HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
         if (user == null || "CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             return "redirect:/login";
         }
         
-        java.util.Optional<com.cleantrack.model.Complaint> optComplaint = complaintRepository.findById(id);
+        java.util.Optional<com.cleantrack.laundry_system.model.Complaint> optComplaint = complaintRepository.findById(id);
         if (optComplaint.isPresent()) {
-            com.cleantrack.model.Complaint c = optComplaint.get();
+            com.cleantrack.laundry_system.model.Complaint c = optComplaint.get();
             if (resolutionNotes == null || resolutionNotes.trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "Resolution notes are required to close a ticket.");
                 return "redirect:/complaints";
@@ -139,7 +139,7 @@ public class ComplaintController {
             c.setStatus("RESOLVED");
             c.setResolvedAt(java.time.LocalDateTime.now());
             complaintRepository.save(c);
-            auditLogRepository.save(new com.cleantrack.model.AuditLog("Complaint ID " + id + " resolved by " + user.getFullName()));
+            auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Complaint ID " + id + " resolved by " + user.getFullName()));
             redirectAttributes.addFlashAttribute("success", "Ticket has been resolved.");
         }
         return "redirect:/complaints";
@@ -147,14 +147,14 @@ public class ComplaintController {
     
     @PostMapping("/archive/{id}")
     public String archiveComplaint(@PathVariable Long id, HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
         if (user == null || "CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             return "redirect:/login";
         }
         
-        java.util.Optional<com.cleantrack.model.Complaint> optComplaint = complaintRepository.findById(id);
+        java.util.Optional<com.cleantrack.laundry_system.model.Complaint> optComplaint = complaintRepository.findById(id);
         if (optComplaint.isPresent()) {
-            com.cleantrack.model.Complaint c = optComplaint.get();
+            com.cleantrack.laundry_system.model.Complaint c = optComplaint.get();
             c.setStatus("ARCHIVED");
             complaintRepository.save(c);
             redirectAttributes.addFlashAttribute("success", "Ticket has been archived.");
@@ -164,18 +164,18 @@ public class ComplaintController {
 
     @PostMapping("/delete/{id}")
     public String deleteComplaint(@PathVariable Long id, HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
         if (user == null || !"CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             return "redirect:/login";
         }
         
-        java.util.Optional<com.cleantrack.model.Complaint> optComplaint = complaintRepository.findById(id);
+        java.util.Optional<com.cleantrack.laundry_system.model.Complaint> optComplaint = complaintRepository.findById(id);
         if (optComplaint.isPresent()) {
-            com.cleantrack.model.Complaint c = optComplaint.get();
+            com.cleantrack.laundry_system.model.Complaint c = optComplaint.get();
             // Ensure customer owns the complaint
             if (c.getCustomer().getId().equals(user.getId())) {
                 complaintRepository.delete(c);
-                auditLogRepository.save(new com.cleantrack.model.AuditLog("Complaint ID " + id + " deleted by customer " + user.getFullName()));
+                auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Complaint ID " + id + " deleted by customer " + user.getFullName()));
                 redirectAttributes.addFlashAttribute("success", "Your ticket has been deleted.");
             }
         }

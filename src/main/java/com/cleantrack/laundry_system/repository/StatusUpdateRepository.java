@@ -1,6 +1,6 @@
-package com.cleantrack.repository;
+package com.cleantrack.laundry_system.repository;
 
-import com.cleantrack.model.StatusUpdate;
+import com.cleantrack.laundry_system.model.StatusUpdate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

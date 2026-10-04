@@ -1,4 +1,4 @@
-package com.cleantrack.model;
+package com.cleantrack.laundry_system.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

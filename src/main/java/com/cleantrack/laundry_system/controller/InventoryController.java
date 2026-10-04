@@ -1,10 +1,10 @@
 package com.cleantrack.laundry_system.controller;
 
-import com.cleantrack.model.AuditLog;
-import com.cleantrack.model.InventoryItem;
-import com.cleantrack.model.User;
-import com.cleantrack.repository.AuditLogRepository;
-import com.cleantrack.repository.InventoryItemRepository;
+import com.cleantrack.laundry_system.model.AuditLog;
+import com.cleantrack.laundry_system.model.InventoryItem;
+import com.cleantrack.laundry_system.model.User;
+import com.cleantrack.laundry_system.repository.AuditLogRepository;
+import com.cleantrack.laundry_system.repository.InventoryItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

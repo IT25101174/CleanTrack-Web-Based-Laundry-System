@@ -1,6 +1,6 @@
-package com.cleantrack.controller;
+package com.cleantrack.laundry_system.controller;
 
-import com.cleantrack.repository.OrderRepository;
+import com.cleantrack.laundry_system.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
@@ -8,11 +8,11 @@ import org.springframework.stereotype.Controller;
 public class WorkQueueController {
 
     private final OrderRepository orderRepository;
-    private final com.cleantrack.repository.StatusUpdateRepository statusUpdateRepository;
-    private final com.cleantrack.repository.AuditLogRepository auditLogRepository;
+    private final com.cleantrack.laundry_system.repository.StatusUpdateRepository statusUpdateRepository;
+    private final com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository;
 
     @Autowired
-    public WorkQueueController(OrderRepository orderRepository, com.cleantrack.repository.StatusUpdateRepository statusUpdateRepository, com.cleantrack.repository.AuditLogRepository auditLogRepository) {
+    public WorkQueueController(OrderRepository orderRepository, com.cleantrack.laundry_system.repository.StatusUpdateRepository statusUpdateRepository, com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository) {
         this.orderRepository = orderRepository;
         this.statusUpdateRepository = statusUpdateRepository;
         this.auditLogRepository = auditLogRepository;
@@ -22,20 +22,20 @@ public class WorkQueueController {
     public String viewQueue(jakarta.servlet.http.HttpSession session, org.springframework.ui.Model model,
                             @org.springframework.web.bind.annotation.RequestParam(value = "stage", required = false) String stage,
                             @org.springframework.web.bind.annotation.RequestParam(value = "search", required = false) String search) {
-        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
         if (user == null || "CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             return "redirect:/login";
         }
 
         // Fetch active orders (not completed, not cancelled)
-        java.util.List<com.cleantrack.model.Order> allOrders = orderRepository.findAll();
-        java.util.List<com.cleantrack.model.Order> activeOrders = new java.util.ArrayList<>();
+        java.util.List<com.cleantrack.laundry_system.model.Order> allOrders = orderRepository.findAll();
+        java.util.List<com.cleantrack.laundry_system.model.Order> activeOrders = new java.util.ArrayList<>();
         
         // Optional stage filter and tracking-ID search (both come from the query string)
         String stageFilter = (stage == null || stage.trim().isEmpty()) ? null : stage.trim();
         String searchTerm = (search == null || search.trim().isEmpty()) ? null : search.trim();
 
-        for (com.cleantrack.model.Order o : allOrders) {
+        for (com.cleantrack.laundry_system.model.Order o : allOrders) {
             // "COMPLETED" = removed from the queue; "Order Completed" stays visible until it is deleted manually
             if ("COMPLETED".equals(o.getStatus()) || "Cancelled".equals(o.getStatus())) {
                 continue;
@@ -54,7 +54,7 @@ public class WorkQueueController {
         boolean incorrectTrackingId = false;
         if (searchTerm != null) {
             incorrectTrackingId = true;
-            for (com.cleantrack.model.Order o : allOrders) {
+            for (com.cleantrack.laundry_system.model.Order o : allOrders) {
                 if (o.getTrackingId() != null
                         && o.getTrackingId().toLowerCase().contains(searchTerm.toLowerCase())) {
                     incorrectTrackingId = false;
@@ -73,18 +73,18 @@ public class WorkQueueController {
 
     @org.springframework.web.bind.annotation.PostMapping("/queue/{id}/advance")
     public String advanceStage(@org.springframework.web.bind.annotation.PathVariable Long id, jakarta.servlet.http.HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
         
         if (user == null || "CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             return "redirect:/login";
         }
 
-        java.util.Optional<com.cleantrack.model.Order> optOrder = orderRepository.findById(id);
+        java.util.Optional<com.cleantrack.laundry_system.model.Order> optOrder = orderRepository.findById(id);
         if (optOrder.isEmpty()) {
             return "redirect:/queue?error=OrderNotFound";
         }
         
-        com.cleantrack.model.Order order = optOrder.get();
+        com.cleantrack.laundry_system.model.Order order = optOrder.get();
         String currentStatus = order.getStatus();
         String nextStatus = getNextStage(currentStatus, order.getServiceType());
 
@@ -104,9 +104,9 @@ public class WorkQueueController {
         orderRepository.save(order);
 
         // Record history
-        com.cleantrack.model.StatusUpdate update = new com.cleantrack.model.StatusUpdate(order, nextStatus, user);
+        com.cleantrack.laundry_system.model.StatusUpdate update = new com.cleantrack.laundry_system.model.StatusUpdate(order, nextStatus, user);
         statusUpdateRepository.save(update);
-        auditLogRepository.save(new com.cleantrack.model.AuditLog("Order ID " + order.getId() + " advanced to " + nextStatus + " by " + user.getFullName()));
+        auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Order ID " + order.getId() + " advanced to " + nextStatus + " by " + user.getFullName()));
 
         // Logging as MVP Notification
         System.out.println("========== NOTIFICATION ==========");
@@ -119,18 +119,18 @@ public class WorkQueueController {
 
     @org.springframework.web.bind.annotation.PostMapping("/queue/{id}/cancel")
     public String cancelOrder(@org.springframework.web.bind.annotation.PathVariable Long id, jakarta.servlet.http.HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
         
         if (user == null || "CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             return "redirect:/login";
         }
 
-        java.util.Optional<com.cleantrack.model.Order> optOrder = orderRepository.findById(id);
+        java.util.Optional<com.cleantrack.laundry_system.model.Order> optOrder = orderRepository.findById(id);
         if (optOrder.isEmpty()) {
             return "redirect:/queue?error=OrderNotFound";
         }
         
-        com.cleantrack.model.Order order = optOrder.get();
+        com.cleantrack.laundry_system.model.Order order = optOrder.get();
         String currentStatus = order.getStatus();
 
         if ("COMPLETED".equals(currentStatus) || "Order Completed".equals(currentStatus) || "Cancelled".equals(currentStatus)) {
@@ -149,9 +149,9 @@ public class WorkQueueController {
         orderRepository.save(order);
 
         // Record history
-        com.cleantrack.model.StatusUpdate update = new com.cleantrack.model.StatusUpdate(order, "Cancelled", user);
+        com.cleantrack.laundry_system.model.StatusUpdate update = new com.cleantrack.laundry_system.model.StatusUpdate(order, "Cancelled", user);
         statusUpdateRepository.save(update);
-        auditLogRepository.save(new com.cleantrack.model.AuditLog("Order ID " + order.getId() + " cancelled by " + user.getFullName()));
+        auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Order ID " + order.getId() + " cancelled by " + user.getFullName()));
 
         System.out.println("========== NOTIFICATION ==========");
         System.out.println("To Customer: Order " + order.getTrackingId() + " processing has been Cancelled.");
@@ -165,18 +165,18 @@ public class WorkQueueController {
     // its status becomes "COMPLETED", which the queue view hides, and the removal is logged.
     @org.springframework.web.bind.annotation.PostMapping("/queue/{id}/delete")
     public String deleteCompletedOrder(@org.springframework.web.bind.annotation.PathVariable Long id, jakarta.servlet.http.HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        com.cleantrack.model.User user = (com.cleantrack.model.User) session.getAttribute("user");
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
 
         if (user == null || "CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
             return "redirect:/login";
         }
 
-        java.util.Optional<com.cleantrack.model.Order> optOrder = orderRepository.findById(id);
+        java.util.Optional<com.cleantrack.laundry_system.model.Order> optOrder = orderRepository.findById(id);
         if (optOrder.isEmpty()) {
             return "redirect:/queue?error=OrderNotFound";
         }
 
-        com.cleantrack.model.Order order = optOrder.get();
+        com.cleantrack.laundry_system.model.Order order = optOrder.get();
         if (!"Order Completed".equals(order.getStatus())) {
             redirectAttributes.addFlashAttribute("error", "Only completed orders can be deleted from the queue.");
             return "redirect:/queue";
@@ -186,9 +186,9 @@ public class WorkQueueController {
         orderRepository.save(order);
 
         // Record history
-        com.cleantrack.model.StatusUpdate update = new com.cleantrack.model.StatusUpdate(order, "REMOVED FROM QUEUE", user);
+        com.cleantrack.laundry_system.model.StatusUpdate update = new com.cleantrack.laundry_system.model.StatusUpdate(order, "REMOVED FROM QUEUE", user);
         statusUpdateRepository.save(update);
-        auditLogRepository.save(new com.cleantrack.model.AuditLog("Order ID " + order.getId() + " removed from the queue by " + user.getFullName()));
+        auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Order ID " + order.getId() + " removed from the queue by " + user.getFullName()));
 
         redirectAttributes.addFlashAttribute("success", "Order " + order.getTrackingId() + " has been deleted from the queue.");
         return "redirect:/queue";
@@ -197,10 +197,10 @@ public class WorkQueueController {
     @org.springframework.web.bind.annotation.GetMapping("/queue/{id}/history")
     @org.springframework.web.bind.annotation.ResponseBody
     public java.util.List<java.util.Map<String, String>> getHistory(@org.springframework.web.bind.annotation.PathVariable Long id) {
-        java.util.List<com.cleantrack.model.StatusUpdate> updates = statusUpdateRepository.findByOrderIdOrderByChangedAtDesc(id);
+        java.util.List<com.cleantrack.laundry_system.model.StatusUpdate> updates = statusUpdateRepository.findByOrderIdOrderByChangedAtDesc(id);
         java.util.List<java.util.Map<String, String>> historyList = new java.util.ArrayList<>();
         
-        for (com.cleantrack.model.StatusUpdate u : updates) {
+        for (com.cleantrack.laundry_system.model.StatusUpdate u : updates) {
             java.util.Map<String, String> map = new java.util.HashMap<>();
             map.put("stage", u.getStage());
             map.put("updatedBy", u.getUpdatedBy().getFullName());

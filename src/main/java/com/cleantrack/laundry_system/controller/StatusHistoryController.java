@@ -1,12 +1,12 @@
-package com.cleantrack.controller;
+package com.cleantrack.laundry_system.controller;
 
-import com.cleantrack.model.AuditLog;
-import com.cleantrack.model.Order;
-import com.cleantrack.model.StatusUpdate;
-import com.cleantrack.model.User;
-import com.cleantrack.repository.AuditLogRepository;
-import com.cleantrack.repository.OrderRepository;
-import com.cleantrack.repository.StatusUpdateRepository;
+import com.cleantrack.laundry_system.model.AuditLog;
+import com.cleantrack.laundry_system.model.Order;
+import com.cleantrack.laundry_system.model.StatusUpdate;
+import com.cleantrack.laundry_system.model.User;
+import com.cleantrack.laundry_system.repository.AuditLogRepository;
+import com.cleantrack.laundry_system.repository.OrderRepository;
+import com.cleantrack.laundry_system.repository.StatusUpdateRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
