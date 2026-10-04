@@ -229,7 +229,6 @@
                         <i class="fa-solid fa-box me-2 text-muted"></i>
                         <span class="fw-bold" th:text="${item.itemName}"></span><br>
                         <small class="text-muted" th:text="${item.unitPrice != null ? 'LKR ' + item.unitPrice + (item.unit != null ? ' / ' + item.unit : '') : ''}"></small>
-                        <div class="small opacity-50" th:if="${item.garmentsPerUnit != null}" th:text="'Auto-use: 1 per ' + ${item.garmentsPerUnit} + ' garments'"></div>
                     </td>
                     <td><span class="badge bg-secondary rounded-pill" th:text="${item.category}"></span></td>
                     <td class="text-muted">
@@ -357,10 +356,6 @@
                                 <label class="form-label text-muted">Stock Quantity</label>
                                 <input type="number" name="quantity" class="form-control" th:value="${item.quantity}" required min="0">
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-muted">Auto-use: 1 unit per N garments</label>
-                                <input type="number" name="garmentsPerUnit" class="form-control" th:value="${item.garmentsPerUnit}" min="1" placeholder="Blank = manual only">
-                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -425,12 +420,6 @@
                                 <option th:each="s : ${suppliers}" th:value="${s.supplierName}" th:text="${s.supplierName}"></option>
                             </select>
                             <div class="form-text" th:if="${#lists.isEmpty(suppliers)}">No suppliers yet. Add one on the Suppliers page first.</div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label text-muted">Auto-use: 1 unit per N garments (optional)</label>
-                            <input type="number" name="garmentsPerUnit" class="form-control" min="1" placeholder="e.g. 20 means 1 unit is used for every 20 garments once the order payment is confirmed">
                         </div>
                     </div>
                 </div>

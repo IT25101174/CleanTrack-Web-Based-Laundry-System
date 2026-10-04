@@ -21,9 +21,6 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
 
     Optional<InventoryItem> findFirstByItemNameIgnoreCase(String itemName);
 
-    // Items that have an automatic-use rule (1 unit per N garments).
-    List<InventoryItem> findByGarmentsPerUnitGreaterThan(Integer value);
-
     // Items whose quantity has fallen below their safety threshold (used by the dashboard alert).
     @Query("select i from InventoryItem i where i.quantity < i.lowStockThreshold order by i.itemName")
     List<InventoryItem> findLowStockItems();

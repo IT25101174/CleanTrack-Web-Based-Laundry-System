@@ -31,11 +31,6 @@ public class InventoryItem {
     @Column(name = "unit_price", precision = 10, scale = 2)
     private java.math.BigDecimal unitPrice;
 
-    // Automatic-use rule: 1 unit of this item is used for every N garments of an accepted order.
-    // Null means the item is only reduced manually.
-    @Column(name = "garments_per_unit")
-    private Integer garmentsPerUnit;
-
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
@@ -82,14 +77,6 @@ public class InventoryItem {
 
     public void setLowStockThreshold(Integer lowStockThreshold) {
         this.lowStockThreshold = lowStockThreshold;
-    }
-
-    public Integer getGarmentsPerUnit() {
-        return garmentsPerUnit;
-    }
-
-    public void setGarmentsPerUnit(Integer garmentsPerUnit) {
-        this.garmentsPerUnit = garmentsPerUnit;
     }
 
     // True when the quantity has fallen below the safety threshold (not mapped to a column).
