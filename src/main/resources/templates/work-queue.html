@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Operational Workflow</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-glow: #3b82f6;
+            --secondary-glow: #8b5cf6;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar Styling */
+        .glass-navbar {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .navbar-brand-custom {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Layout styling */
+        .dashboard-container {
+            flex-grow: 1;
+            padding: 40px 20px;
+            z-index: 10;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            color: white;
+        }
+        
+        .btn-outline-danger-custom {
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-danger-custom:hover {
+            background: #ef4444;
+            color: #fff;
+            border-color: #ef4444;
+        }
+        
+        .btn-outline-custom {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-custom:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.4);
+            color: white;
+        }
+
+        .table-custom {
+            color: var(--text-main);
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+        
+        .table-custom thead th {
+            border: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        
+        .table-custom tbody tr {
+            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.2s ease;
+        }
+        
+        .table-custom tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: scale(1.01);
+        }
+        
+        .table-custom tbody td {
+            border: none;
+            padding: 15px;
+            vertical-align: middle;
+        }
+        
+        .table-custom tbody td:first-child {
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+        
+        .table-custom tbody td:last-child {
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+        
+        .badge-stage {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            font-size: 0.8rem;
+            padding: 5px 12px;
+        }
+
+        /* Timeline / History styling */
+        .history-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+        
+        .history-item {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .history-item::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            bottom: -25px;
+            width: 2px;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .history-item:last-child::before {
+            display: none;
+        }
+        
+        .history-item::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary-glow);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+        
+        /* Modal Customization */
+        .modal-content {
+            background: #0f172a;
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            color: var(--text-main);
+        }
+        .modal-header {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg glass-navbar navbar-dark py-3">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="/dashboard">
+                <i class="fa-solid fa-soap me-2"></i>CleanTrack
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item me-3 text-muted">
+                        Welcome, <strong class="text-white" th:text="${user.fullName}">User FullName</strong>
+                        <span class="badge bg-secondary ms-1" th:text="${user.role?.name()}">ROLE</span>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/dashboard}" class="btn-outline-custom border-0 py-2">
+                            <i class="fa-solid fa-house me-2"></i>Dashboard
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace Container -->
+    <div class="container dashboard-container">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>Operational Workflow Queue</h2>
+                <p class="text-muted">Manage laundry processing stages and order progression.</p>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                <!-- Search by Tracking ID -->
+                <form th:action="@{/queue}" method="GET" class="d-flex gap-2">
+                    <input type="hidden" name="stage" th:if="${selectedStage != null}" th:value="${selectedStage}">
+                    <input type="text" name="search" class="form-control" placeholder="Search Tracking ID" th:value="${searchTerm}"
+                           style="background: rgba(255,255,255,0.05); color: #fff; border-color: rgba(255,255,255,0.1); min-width: 200px;">
+                    <button type="submit" class="btn btn-outline-secondary" title="Search"
+                            style="background: rgba(255,255,255,0.05); color: #fff; border-color: rgba(255,255,255,0.1);">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> Search
+                    </button>
+                </form>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" style="background: rgba(255,255,255,0.05); color: #fff; border-color: rgba(255,255,255,0.1);">
+                        <i class="fa-solid fa-filter me-1"></i> Filter Stage
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark" style="background: #0f172a; border-color: rgba(255,255,255,0.1);">
+                        <li><a class="dropdown-item" th:href="@{/queue}">All Active</a></li>
+                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
+                        <li><a class="dropdown-item" th:href="@{/queue(stage='Order Placed')}">Order Placed</a></li>
+                        <li><a class="dropdown-item" th:href="@{/queue(stage='RECEIVED')}">Received</a></li>
+                        <li><a class="dropdown-item" th:href="@{/queue(stage='WASHING')}">Washing</a></li>
+                        <li><a class="dropdown-item" th:href="@{/queue(stage='DRYING')}">Drying</a></li>
+                        <li><a class="dropdown-item" th:href="@{/queue(stage='IRONING')}">Ironing</a></li>
+                        <li><a class="dropdown-item" th:href="@{/queue(stage='GARMENT INSPECTION')}">Garment Inspection</a></li>
+                        <li><a class="dropdown-item" th:href="@{/queue(stage='CLEANING')}">Cleaning</a></li>
+                        <li><a class="dropdown-item" th:href="@{/queue(stage='READY FOR COLLECTION')}">Ready For Collection</a></li>
+                        <li><a class="dropdown-item" th:href="@{/queue(stage='Order Completed')}">Order Completed</a></li>
+                    </ul>
+                </div>
+
+                <!-- Status History -->
+                <a th:href="@{/status-history}" class="btn btn-outline-secondary"
+                   style="background: rgba(255,255,255,0.05); color: #fff; border-color: rgba(255,255,255,0.1);">
+                    <i class="fa-solid fa-clock-rotate-left me-1"></i> Status History
+                </a>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div th:if="${success}" class="alert alert-success" role="alert" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399;">
+            <i class="fa-solid fa-circle-check me-2"></i><span th:text="${success}"></span>
+        </div>
+        <div th:if="${incorrectTrackingId}" class="alert alert-danger" role="alert" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i><span>Incorrect Tracking ID</span>
+        </div>
+        <div th:if="${error}" class="alert alert-danger" role="alert" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
+        </div>
+        
+        <div class="glass-card p-0 overflow-hidden">
+            <div class="table-responsive px-3 pb-3">
+                <table class="table table-custom mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tracking ID</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Service</th>
+                            <th>Current Stage</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="order : ${orders}">
+                            <td><strong th:text="${order.trackingId}">#CT-123</strong></td>
+                            <td th:text="${order.customer != null ? order.customer.fullName : 'Walk-in'}">John</td>
+                            <td th:text="${order.quantity + 'x ' + order.itemDescription}">3x Shirts</td>
+                            <td>
+                                <i class="fa-solid fa-shirt text-primary me-1"></i> 
+                                <span th:text="${order.serviceType}">WASH_ONLY</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-stage rounded-pill">
+                                    <i class="fa-solid fa-spinner fa-spin me-1" th:if="${order.status != 'Order Placed' and order.status != 'READY FOR COLLECTION' and order.status != 'Order Completed'}"></i>
+                                    <span th:text="${order.status}">WASHING</span>
+                                </span>
+                            </td>
+                            <td>
+                                <!-- Advance button -->
+                                <form th:if="${order.status != 'Order Completed'}" th:action="@{/queue/{id}/advance(id=${order.id})}" method="POST" class="d-inline"
+                                      onsubmit="var b = this.querySelector('button[type=submit]'); if (b.disabled) { return false; } b.disabled = true; b.style.opacity = '0.6';">
+                                    <button type="submit" class="btn btn-primary-custom btn-sm">
+                                        Advance Stage <i class="fa-solid fa-arrow-right ms-1"></i>
+                                    </button>
+                                </form>
+                                
+                                <!-- Cancel Processing button (Admins/Supervisors only) -->
+                                <form th:if="${order.status != 'Order Completed' and (user.role?.name() == 'ADMIN' || user.role?.name() == 'BRANCH_SUPERVISOR')}" 
+                                      th:action="@{/queue/{id}/cancel(id=${order.id})}" method="POST" class="d-inline ms-1"
+                                      onsubmit="return confirm('Are you sure you want to completely cancel this order and halt processing?');">
+                                    <button type="submit" class="btn btn-outline-danger-custom btn-sm py-1 px-2 border-0" title="Cancel Order">
+                                        <i class="fa-solid fa-ban"></i>
+                                    </button>
+                                </form>
+                                
+                                <!-- Delete button (only for "Order Completed") -->
+                                <form th:if="${order.status == 'Order Completed'}"
+                                      th:action="@{/queue/{id}/delete(id=${order.id})}" method="POST" class="d-inline"
+                                      onsubmit="return confirm('Delete this completed order from the queue?');">
+                                    <button type="submit" class="btn btn-outline-danger-custom btn-sm">
+                                        <i class="fa-solid fa-trash me-1"></i> Delete
+                                    </button>
+                                </form>
+
+                                <!-- History button -->
+                                <button th:if="${order.status != 'Order Completed'}" class="btn btn-outline-secondary btn-sm ms-1 border-0" 
+                                        style="background: rgba(128,128,128,0.18); color: inherit;"
+                                        th:onclick="'loadHistory(' + ${order.id} + ')'" 
+                                        data-bs-toggle="modal" data-bs-target="#historyModal"
+                                        title="View History">
+                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        
+                        <tr th:if="${#lists.isEmpty(orders)}">
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted mb-3"><i class="fa-solid fa-clipboard-list fa-3x opacity-25"></i></div>
+                                <th:block th:if="${selectedStage != null or searchTerm != null}">
+                                    <h5>No Orders</h5>
+                                    <p class="text-muted">No orders match the selected stage or tracking ID.</p>
+                                </th:block>
+                                <th:block th:unless="${selectedStage != null or searchTerm != null}">
+                                    <h5>No active orders</h5>
+                                    <p class="text-muted">The processing queue is completely clear!</p>
+                                </th:block>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+    
+    <!-- History Modal -->
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-list-ul me-2 text-primary"></i>Order Stage History</h5>
+                    <button type="button" class="close-btn" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body p-4">
+                    <ul class="history-list" id="historyList">
+                        <!-- History items injected here via JS -->
+                        <li class="text-muted text-center"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading history...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function loadHistory(orderId) {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '<li class="text-muted text-center"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading history...</li>';
+            
+            fetch('/queue/' + orderId + '/history')
+                .then(response => response.json())
+                .then(data => {
+                    list.innerHTML = '';
+                    if (data.length === 0) {
+                        list.innerHTML = '<li class="text-muted text-center">No history recorded yet.</li>';
+                        return;
+                    }
+                    
+                    data.forEach(update => {
+                        list.innerHTML += `
+                            <li class="history-item">
+                                <strong class="d-block text-white">${update.stage}</strong>
+                                <span class="text-muted small">Updated by ${update.updatedBy}</span><br>
+                                <span class="text-primary small" style="font-size: 0.75rem;">${update.date}</span>
+                            </li>
+                        `;
+                    });
+                })
+                .catch(err => {
+                    list.innerHTML = '<li class="text-danger text-center">Failed to load history.</li>';
+                });
+        }
+    </script>
+</body>
+</html>
