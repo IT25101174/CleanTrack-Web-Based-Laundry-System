@@ -1,304 +1,212 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CleanTrack - Supply Orders</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    :root {
-        --bg-color: #0b0f19;
-        --card-bg: rgba(255,255,255,0.03);
-        --card-border: rgba(255,255,255,0.08);
-        --text-main: #f3f4f6;
-        --text-muted: #9ca3af;
-    }
-    .text-muted { color: var(--text-muted) !important; }
-    body {
-        font-family: 'Outfit', sans-serif;
-        background-color: var(--bg-color);
-        color: var(--text-main);
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-    .glass-navbar {
-        background: rgba(15,23,42,0.6);
-        backdrop-filter: blur(15px);
-        border-bottom: 1px solid var(--card-border);
-    }
-    .navbar-brand-custom {
-        font-weight: 700; font-size: 1.5rem;
-        background: linear-gradient(135deg, #60a5fa, #a78bfa);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .dashboard-container { flex-grow: 1; padding: 40px 20px; }
-    .glass-card {
-        background: var(--card-bg);
-        backdrop-filter: blur(20px);
-        border: 1px solid var(--card-border);
-        border-radius: 20px;
-        padding: 30px;
-        box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-        margin-bottom: 24px;
-    }
-    .form-control {
-        background-color: rgba(15,23,42,0.5);
-        border: 1px solid var(--card-border);
-        color: var(--text-main);
-        padding: 10px 15px; border-radius: 10px;
-    }
-    .form-control:focus {
-        background-color: rgba(15,23,42,0.8);
-        border-color: #3b82f6;
-        color: var(--text-main);
-        box-shadow: 0 0 0 0.25rem rgba(59,130,246,0.25);
-    }
-    .btn-primary-custom {
-        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-        border: none; color: #fff;
-        padding: 10px 20px; border-radius: 10px;
-        font-weight: 600; transition: all 0.3s ease;
-    }
-    .btn-primary-custom:hover { transform: translateY(-1px); color: white; box-shadow: 0 4px 12px rgba(139,92,246,0.3); }
-    .btn-outline-custom {
-        background: transparent;
-        border: 1px solid rgba(255,255,255,0.2);
-        color: #fff; padding: 10px 20px;
-        border-radius: 10px; font-weight: 600;
-        transition: all 0.3s ease;
-        text-decoration: none;
-    }
-    .btn-outline-custom:hover { background: rgba(255,255,255,0.05); color: white; }
-    .btn-action {
-        background: rgba(59,130,246,0.1);
-        border: 1px solid rgba(59,130,246,0.3);
-        color: #60a5fa; padding: 5px 12px;
-        border-radius: 8px; font-size: 0.82rem; font-weight: 600;
-        cursor: pointer; transition: all 0.2s ease;
-    }
-    .btn-action:hover { background: rgba(59,130,246,0.25); }
-    .table-custom { color: var(--text-main); border-collapse: separate; border-spacing: 0 10px; }
-    .table-custom thead th { border: none; color: var(--text-muted); font-weight: 500; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
-    .table-custom tbody tr { background: rgba(255,255,255,0.02); transition: all 0.2s ease; }
-    .table-custom tbody tr:hover { background: rgba(255,255,255,0.05); }
-    .table-custom tbody td { border: none; padding: 15px; vertical-align: middle; }
-    .table-custom tbody td:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
-    .table-custom tbody td:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
-    .status-pending { color: #f59e0b; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
-    .status-received { color: #34d399; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); }
-    .status-cancelled { color: #9ca3af; background: rgba(156,163,175,0.1); border: 1px solid rgba(156,163,175,0.3); }
-    .modal-content {
-        background: #111827;
-        border: 1px solid var(--card-border);
-        border-radius: 16px;
-        color: var(--text-main);
-    }
-    .modal-header { border-bottom: 1px solid var(--card-border); }
-    .modal-footer { border-top: 1px solid var(--card-border); }
-
-    /* Keep the menu and buttons visible on half-width windows */
-    .navbar .container { flex-wrap: wrap; row-gap: 8px; }
-    .navbar-nav { flex-wrap: wrap; justify-content: flex-end; }
-    .navbar .btn-outline-custom { text-decoration: none; }
-    .btn-primary-custom { white-space: nowrap; }
-    .dashboard-container > .d-flex { flex-wrap: wrap; gap: 12px; }
-    @media (max-width: 991px) {
-        .navbar .btn-outline-custom { padding: 8px 10px; font-size: 0.9rem; }
-        .table-custom tbody td { padding: 10px; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Supply Orders</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/inventory-ui.css}">
 </head>
-<body>
-<nav class="navbar navbar-expand glass-navbar navbar-dark py-3">
-  <div class="container">
-    <a class="navbar-brand navbar-brand-custom" href="/dashboard">
-      <i class="fa-solid fa-soap me-2"></i>CleanTrack
-    </a>
-    <div class="collapse navbar-collapse justify-content-end">
-      <ul class="navbar-nav align-items-center">
-        <li class="nav-item me-3 text-muted">
-          Welcome, <strong class="text-white" th:text="${user.fullName}">User</strong>
-        </li>
-        <li class="nav-item">
-          <a href="/inventory" class="btn-outline-custom border-0">
-            <i class="fa-solid fa-boxes-stacked me-2"></i>Inventory
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="/suppliers" class="btn-outline-custom border-0">
-            <i class="fa-solid fa-truck-field me-2"></i>Suppliers
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="/dashboard" class="btn-outline-custom border-0">
-            <i class="fa-solid fa-house me-2"></i>Dashboard
-          </a>
-        </li>
-      </ul>
+<body data-page="supply-orders">
+<nav class="navbar navbar-expand ct-nav py-3">
+    <div class="container">
+        <a class="ct-brand" href="/dashboard"><i class="fa-solid fa-soap me-2"></i>CleanTrack</a>
+        <div class="collapse navbar-collapse justify-content-end">
+            <ul class="navbar-nav align-items-center">
+                <li class="nav-item ct-nav-user">Welcome, <strong class="text-white" th:text="${user.fullName}">User</strong></li>
+                <li class="nav-item"><a href="/inventory" class="ct-nav-link"><i class="fa-solid fa-boxes-stacked me-2"></i>Inventory</a></li>
+                <li class="nav-item"><a href="/suppliers" class="ct-nav-link"><i class="fa-solid fa-truck-field me-2"></i>Suppliers</a></li>
+                <li class="nav-item"><a href="/supply-orders" class="ct-nav-link active"><i class="fa-solid fa-clipboard-list me-2"></i>Supply Orders</a></li>
+                <li class="nav-item"><a href="/dashboard" class="ct-nav-link"><i class="fa-solid fa-house me-2"></i>Dashboard</a></li>
+            </ul>
+        </div>
     </div>
-  </div>
 </nav>
 
-<div class="container dashboard-container">
-  <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
-    <i class="fa-solid fa-check-circle me-2"></i><span th:text="${success}"></span>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
-  <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-    <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
+<div class="container ct-container">
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-check-circle me-2"></i><span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2>Supply Orders</h2>
-      <p class="text-muted mb-0">Order stock from your suppliers. Receiving an order adds it to your inventory.</p>
-      <p class="text-muted small mt-1" th:unless="${canManage}">View only. Only the Branch Supervisor can change supply orders.</p>
+    <div class="ct-header">
+        <div>
+            <h2>Supply Orders</h2>
+            <p class="text-muted">Order stock from your suppliers. Receiving an order adds it to your inventory.</p>
+            <p class="text-muted small mt-1" th:unless="${canManage}">View only. Only the Branch Supervisor can change supply orders.</p>
+        </div>
+        <button th:if="${canManage}" type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#createOrderModal">
+            <i class="fa-solid fa-plus me-2"></i>New Supply Order
+        </button>
     </div>
-    <button th:if="${canManage}" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#createOrderModal">
-      <i class="fa-solid fa-plus me-2"></i>New Supply Order
-    </button>
-  </div>
 
-  <div class="row mb-4">
-    <div class="col-md-4">
-      <div class="glass-card mb-0" style="background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.2);">
-        <div class="text-uppercase small fw-bold" style="color: #f59e0b;">Pending Orders</div>
-        <div class="fs-3 fw-bold text-white" th:text="${pendingCount}">0</div>
-      </div>
+    <div class="stat-row">
+        <button type="button" class="stat tone-amber" data-chip-tile="pending" title="Show pending orders only">
+            <span class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></span>
+            <span>
+                <span class="stat-label d-block">Pending Orders</span>
+                <span class="stat-value" th:text="${pendingCount}">0</span>
+            </span>
+        </button>
+        <button type="button" class="stat tone-green" data-chip-tile="received" title="Show received orders only">
+            <span class="stat-icon"><i class="fa-solid fa-circle-check"></i></span>
+            <span>
+                <span class="stat-label d-block">Received Orders</span>
+                <span class="stat-value" th:text="${receivedCount}">0</span>
+            </span>
+        </button>
     </div>
-    <div class="col-md-4">
-      <div class="glass-card mb-0" style="background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.2);">
-        <div class="text-uppercase small fw-bold text-success">Received Orders</div>
-        <div class="fs-3 fw-bold text-white" th:text="${receivedCount}">0</div>
-      </div>
-    </div>
-  </div>
 
-  <div class="glass-card p-0 overflow-hidden">
-    <div class="table-responsive px-3 pb-3">
-      <table class="table table-custom mb-0">
-        <thead>
-        <tr>
-          <th>Order</th>
-          <th>Item</th>
-          <th>Supplier</th>
-          <th>Quantity</th>
-          <th>Status</th>
-          <th>Ordered</th>
-          <th class="d-none d-lg-table-cell">Received</th>
-          <th th:if="${canManage}">Action</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="o : ${orders}">
-          <td class="fw-bold" th:text="${'#' + o.id}"></td>
-          <td>
-            <span class="fw-bold" th:text="${o.itemName}"></span>
-            <div class="small text-muted" th:if="${o.notes != null}" th:text="${o.notes}"></div>
-          </td>
-          <td class="text-muted" th:text="${o.supplierName != null ? o.supplierName : '-'}"></td>
-          <td class="fw-bold" th:text="${o.quantity}"></td>
-          <td>
-            <span class="badge status-pending px-3 py-2 rounded-pill" th:if="${o.status == 'PENDING'}">Pending</span>
-            <span class="badge status-received px-3 py-2 rounded-pill" th:if="${o.status == 'RECEIVED'}">Received</span>
-            <span class="badge status-cancelled px-3 py-2 rounded-pill" th:if="${o.status == 'CANCELLED'}">Cancelled</span>
-            <div class="small text-muted d-lg-none" th:if="${o.receivedAtDisplay != null}" th:text="${'Received ' + o.receivedAtDisplay}"></div>
-          </td>
-          <td class="text-muted">
-            <span th:text="${o.orderedAtDisplay}"></span>
-            <div class="small" th:if="${o.orderedBy != null}" th:text="${'by ' + o.orderedBy}"></div>
-          </td>
-          <td class="text-muted d-none d-lg-table-cell" th:text="${o.receivedAtDisplay != null ? o.receivedAtDisplay : '-'}"></td>
-          <td th:if="${canManage}">
-            <div class="d-flex flex-wrap gap-2" th:if="${o.status == 'PENDING'}">
-              <form th:action="@{/supply-orders/receive/{id}(id=${o.id})}" method="POST"
-                    onsubmit="return confirm('Mark this order as received and add the quantity to inventory?');">
-                <button type="submit" class="btn-action"
-                        style="color: #34d399; border-color: rgba(52,211,153,0.3); background: rgba(16,185,129,0.1);">
-                  Receive
-                </button>
-              </form>
-              <form th:action="@{/supply-orders/cancel/{id}(id=${o.id})}" method="POST"
-                    onsubmit="return confirm('Are you sure you want to cancel this supply order?');">
-                <button type="submit" class="btn-action"
-                        style="color: #ef4444; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.1);">
-                  Cancel
-                </button>
-              </form>
-            </div>
-            <span class="text-muted" th:unless="${o.status == 'PENDING'}">-</span>
-          </td>
-        </tr>
-        <tr th:if="${#lists.isEmpty(orders)}">
-          <td th:colspan="${canManage} ? 8 : 7" class="text-center py-5">
-            <i class="fa-solid fa-clipboard-list fa-3x opacity-25 mb-3 d-block text-muted"></i>
-            <h5>No supply orders yet</h5>
-            <p class="text-muted mb-0">Create an order when an item is running low.</p>
-          </td>
-        </tr>
-        </tbody>
-      </table>
+    <div class="toolbar" th:unless="${#lists.isEmpty(orders)}">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" id="filterSearch" class="form-control" placeholder="Search item, supplier, order number" aria-label="Search supply orders">
+        </div>
+        <div class="chip-group" role="group" aria-label="Status filter">
+            <button type="button" class="chip active" data-chip="all">All</button>
+            <button type="button" class="chip" data-chip="pending">Pending</button>
+            <button type="button" class="chip" data-chip="received">Received</button>
+            <button type="button" class="chip" data-chip="cancelled">Cancelled</button>
+        </div>
+        <span class="spacer"></span>
+        <span class="result-count" id="filterCount"></span>
     </div>
-  </div>
+
+    <div class="panel">
+        <div class="table-wrap">
+            <table class="table table-modern">
+                <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Item</th>
+                    <th>Supplier</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Ordered</th>
+                    <th class="d-none d-lg-table-cell">Received</th>
+                    <th th:if="${canManage}">Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="o : ${orders}" data-filter-item th:attr="data-tags=${#strings.toLowerCase(o.status)}">
+                    <td class="cell-title" th:text="${'#' + o.id}"></td>
+                    <td>
+                        <span class="cell-title" th:text="${o.itemName}"></span>
+                        <div class="cell-sub" th:if="${o.notes != null}" th:text="${o.notes}"></div>
+                    </td>
+                    <td class="text-muted" th:text="${o.supplierName != null ? o.supplierName : '-'}"></td>
+                    <td class="cell-title" th:text="${o.quantity}"></td>
+                    <td>
+                        <span class="tag status-pending" th:if="${o.status == 'PENDING'}">Pending</span>
+                        <span class="tag status-received" th:if="${o.status == 'RECEIVED'}">Received</span>
+                        <span class="tag status-cancelled" th:if="${o.status == 'CANCELLED'}">Cancelled</span>
+                        <div class="cell-sub d-lg-none" th:if="${o.receivedAtDisplay != null}" th:text="${'Received ' + o.receivedAtDisplay}"></div>
+                    </td>
+                    <td class="text-muted">
+                        <span th:text="${o.orderedAtDisplay}"></span>
+                        <div class="cell-sub" th:if="${o.orderedBy != null}" th:text="${'by ' + o.orderedBy}"></div>
+                    </td>
+                    <td class="text-muted d-none d-lg-table-cell" th:text="${o.receivedAtDisplay != null ? o.receivedAtDisplay : '-'}"></td>
+                    <td th:if="${canManage}">
+                        <div class="row-actions" th:if="${o.status == 'PENDING'}">
+                            <form th:action="@{/supply-orders/receive/{id}(id=${o.id})}" method="POST"
+                                  th:data-confirm="'Mark order #' + ${o.id} + ' as received and add ' + ${o.quantity} + ' to ' + ${o.itemName} + ' stock?'"
+                                  data-confirm-label="Receive" data-confirm-tone="accent">
+                                <button type="submit" class="btn-act btn-act-ok"><i class="fa-solid fa-check"></i>Receive</button>
+                            </form>
+                            <form th:action="@{/supply-orders/cancel/{id}(id=${o.id})}" method="POST"
+                                  th:data-confirm="'Cancel supply order #' + ${o.id} + '?'" data-confirm-label="Cancel order">
+                                <button type="submit" class="btn-act btn-act-danger"><i class="fa-solid fa-xmark"></i>Cancel</button>
+                            </form>
+                        </div>
+                        <span class="text-muted" th:unless="${o.status == 'PENDING'}">-</span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(orders)}">
+                    <td th:colspan="${canManage} ? 8 : 7">
+                        <div class="empty-state">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                            <h5>No supply orders yet</h5>
+                            <p class="mb-0">Create an order when an item is running low.</p>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div id="noResults" class="panel mt-3" hidden>
+        <div class="empty-state">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <h5>No matching orders</h5>
+            <p class="mb-0">Try a different search or status.</p>
+        </div>
+    </div>
 </div>
 
-<!-- New supply order modal -->
-<div class="modal fade" id="createOrderModal" tabindex="-1" th:if="${canManage}">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fa-solid fa-clipboard-list me-2"></i>New Supply Order</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form th:action="@{/supply-orders/create}" method="POST">
-        <div class="modal-body">
-          <div class="alert alert-warning" th:if="${#lists.isEmpty(items)}">
-            There are no inventory items yet. <a href="/inventory">Add an item</a> first.
-          </div>
-          <div class="alert alert-warning" th:if="${#lists.isEmpty(suppliers)}">
-            There are no suppliers yet. <a href="/suppliers">Add a supplier</a> first.
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label text-muted">Item</label>
-              <select name="itemId" class="form-control" required>
-                <option value="" disabled selected>Select an item</option>
-                <option th:each="i : ${items}" th:value="${i.id}"
-                        th:text="${i.itemName + ' (in stock: ' + i.quantity + ')'}"></option>
-              </select>
+<!-- New supply order dialog -->
+<div class="modal fade" id="createOrderModal" tabindex="-1" aria-hidden="true" th:if="${canManage}">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-clipboard-list me-2 text-primary"></i>New Supply Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label text-muted">Supplier</label>
-              <select name="supplierId" class="form-control" required>
-                <option value="" disabled selected>Select a supplier</option>
-                <option th:each="s : ${suppliers}" th:value="${s.id}" th:text="${s.supplierName}"></option>
-              </select>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label text-muted">Quantity</label>
-            <input type="number" name="quantity" class="form-control" placeholder="e.g. 50" min="1" max="1000000" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label text-muted">Notes (optional)</label>
-            <input type="text" name="notes" class="form-control" placeholder="e.g. Deliver before Friday" maxlength="200">
-          </div>
+            <form th:action="@{/supply-orders/create}" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-warning" th:if="${#lists.isEmpty(items)}">
+                        There are no inventory items yet. <a href="/inventory">Add an item</a> first.
+                    </div>
+                    <div class="alert alert-warning" th:if="${#lists.isEmpty(suppliers)}">
+                        There are no suppliers yet. <a href="/suppliers">Add a supplier</a> first.
+                    </div>
+                    <div class="form-section">
+                        <div class="form-section-title"><i class="fa-solid fa-box"></i>What to order</div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Item</label>
+                                <select name="itemId" class="form-control" required>
+                                    <option value="" disabled selected>Select an item</option>
+                                    <option th:each="i : ${items}" th:value="${i.id}"
+                                            th:text="${i.itemName + ' (in stock: ' + i.quantity + ')'}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Supplier</label>
+                                <select name="supplierId" class="form-control" required>
+                                    <option value="" disabled selected>Select a supplier</option>
+                                    <option th:each="s : ${suppliers}" th:value="${s.id}" th:text="${s.supplierName}"></option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" name="quantity" class="form-control" placeholder="e.g. 50" min="1" max="1000000" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-section mb-0">
+                        <div class="form-section-title"><i class="fa-solid fa-note-sticky"></i>Notes</div>
+                        <label class="form-label">Notes (optional)</label>
+                        <input type="text" name="notes" class="form-control" placeholder="e.g. Deliver before Friday" maxlength="200">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom"
+                            th:disabled="${#lists.isEmpty(items) or #lists.isEmpty(suppliers)}">Create Order</button>
+                </div>
+            </form>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary-custom"
-                  th:disabled="${#lists.isEmpty(items) or #lists.isEmpty(suppliers)}">Create Order</button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/inventory-ui.js}"></script>
 </body>
 </html>
