@@ -2,6 +2,7 @@ package com.cleantrack.laundry_system.controller;
 
 import com.cleantrack.laundry_system.model.Role;
 import com.cleantrack.laundry_system.model.User;
+import com.cleantrack.laundry_system.repository.InventoryItemRepository;
 import com.cleantrack.laundry_system.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import org.mindrot.jbcrypt.BCrypt;
@@ -19,10 +20,12 @@ import java.util.Optional;
 public class AuthController {
 
     private final UserRepository userRepository;
+    private final InventoryItemRepository inventoryItemRepository;
 
     @Autowired
-    public AuthController(UserRepository userRepository) {
+    public AuthController(UserRepository userRepository, InventoryItemRepository inventoryItemRepository) {
         this.userRepository = userRepository;
+        this.inventoryItemRepository = inventoryItemRepository;
     }
 
     @GetMapping("/")
@@ -128,6 +131,12 @@ public class AuthController {
             return "redirect:/login";
         }
         model.addAttribute("user", user);
+
+        // UC-05 extension 7a: the supervisor dashboard shows a low-stock warning.
+        String role = user.getRole() != null ? user.getRole().name() : "";
+        if ("BRANCH_SUPERVISOR".equals(role) || "ADMIN".equals(role)) {
+            model.addAttribute("lowStockItems", inventoryItemRepository.findLowStockItems());
+        }
         return "dashboard";
     }
 }

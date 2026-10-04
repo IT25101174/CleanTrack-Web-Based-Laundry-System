@@ -10,12 +10,14 @@ public class WorkQueueController {
     private final OrderRepository orderRepository;
     private final com.cleantrack.laundry_system.repository.StatusUpdateRepository statusUpdateRepository;
     private final com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository;
+    private final com.cleantrack.laundry_system.service.InventoryStockService inventoryStockService;
 
     @Autowired
-    public WorkQueueController(OrderRepository orderRepository, com.cleantrack.laundry_system.repository.StatusUpdateRepository statusUpdateRepository, com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository) {
+    public WorkQueueController(OrderRepository orderRepository, com.cleantrack.laundry_system.repository.StatusUpdateRepository statusUpdateRepository, com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository, com.cleantrack.laundry_system.service.InventoryStockService inventoryStockService) {
         this.orderRepository = orderRepository;
         this.statusUpdateRepository = statusUpdateRepository;
         this.auditLogRepository = auditLogRepository;
+        this.inventoryStockService = inventoryStockService;
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/queue")
@@ -113,7 +115,23 @@ public class WorkQueueController {
         System.out.println("To Customer: Order " + order.getTrackingId() + " has reached stage: " + nextStatus);
         System.out.println("==================================");
 
-        redirectAttributes.addFlashAttribute("success", "Order advanced to " + nextStatus);
+        // UC-05 extension 3a: when Counter Staff or Admin accepts a new order, the stock it uses is
+        // deducted automatically from every item that has an auto-use rule (1 unit per N garments).
+        String successMessage = "Order advanced to " + nextStatus;
+        if ("Order Placed".equals(currentStatus) && ("COUNTER_STAFF".equals(role) || "ADMIN".equals(role))) {
+            com.cleantrack.laundry_system.service.InventoryStockService.AutoConsumeResult stock =
+                    inventoryStockService.consumeForOrder(order, user.getFullName());
+            if (!stock.getDeducted().isEmpty()) {
+                successMessage += ". Stock used: " + String.join(", ", stock.getDeducted()) + ".";
+            }
+            if (!stock.getShortages().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error",
+                        "Not enough stock to deduct automatically for: " + String.join("; ", stock.getShortages())
+                                + ". Please restock and adjust the inventory manually.");
+            }
+        }
+
+        redirectAttributes.addFlashAttribute("success", successMessage);
         return "redirect:/queue";
     }
 

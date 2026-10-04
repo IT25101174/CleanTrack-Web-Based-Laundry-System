@@ -171,11 +171,15 @@
         </button>
     </div>
 
-    <!-- Low stock alert banner -->
-    <div th:each="item : ${items}" th:if="${item.quantity <= item.lowStockThreshold}">
-        <div class="alert d-flex align-items-center mb-3" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; color: #f87171;" th:first>
-            <i class="fa-solid fa-triangle-exclamation me-3 fa-lg"></i>
-            <span>Low stock alert: <strong th:text="${item.itemName}"></strong> is below threshold!</span>
+    <!-- Low stock alert banner (one alert listing every item below its threshold) -->
+    <div th:if="${!#lists.isEmpty(lowStockItems)}" class="alert d-flex align-items-start mb-3"
+         style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; color: #f87171;">
+        <i class="fa-solid fa-triangle-exclamation me-3 fa-lg mt-1"></i>
+        <div>
+            <strong>Low stock alert:</strong>
+            <span th:each="li, st : ${lowStockItems}">
+                <span th:text="${li.itemName + ' (' + li.quantity + ' left, minimum ' + li.lowStockThreshold + ')'}"></span><span th:unless="${st.last}">, </span>
+            </span>
         </div>
     </div>
 
@@ -191,7 +195,7 @@
             <div class="glass-card mb-0" style="background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.2);">
                 <div class="text-uppercase small fw-bold text-danger">Low Stock Items</div>
                 <div class="fs-3 fw-bold text-white">
-                    <span th:text="${#lists.size(items.?[quantity <= lowStockThreshold])}">0</span>
+                    <span th:text="${#lists.size(lowStockItems)}">0</span>
                 </div>
             </div>
         </div>
@@ -220,16 +224,23 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="item : ${items}" th:classappend="${item.quantity <= item.lowStockThreshold} ? 'low-stock-row' : ''">
+                <tr th:each="item : ${items}" th:classappend="${item.lowStock} ? 'low-stock-row' : ''">
                     <td>
                         <i class="fa-solid fa-box me-2 text-muted"></i>
                         <span class="fw-bold" th:text="${item.itemName}"></span><br>
-                        <small class="text-muted" th:text="${item.unitPrice != null ? 'LKR ' + item.unitPrice + ' / ' + item.unit : ''}"></small>
+                        <small class="text-muted" th:text="${item.unitPrice != null ? 'LKR ' + item.unitPrice + (item.unit != null ? ' / ' + item.unit : '') : ''}"></small>
+                        <div class="small opacity-50" th:if="${item.garmentsPerUnit != null}" th:text="'Auto-use: 1 per ' + ${item.garmentsPerUnit} + ' garments'"></div>
                     </td>
                     <td><span class="badge bg-secondary rounded-pill" th:text="${item.category}"></span></td>
-                    <td class="text-muted" th:text="${item.supplier}"></td>
+                    <td class="text-muted">
+                        <span th:text="${item.supplier}"></span>
+                        <div class="small opacity-75" th:if="${item.supplier != null and supplierMap.get(item.supplier) != null}">
+                            <span th:text="${supplierMap.get(item.supplier).contactPerson}"></span>
+                            <span th:if="${supplierMap.get(item.supplier).phone != null}" th:text="'| ' + ${supplierMap.get(item.supplier).phone}"></span>
+                        </div>
+                    </td>
                     <td>
-                                <span th:class="${item.quantity <= item.lowStockThreshold} ? 'qty-low' : 'qty-ok'"
+                                <span th:class="${item.lowStock} ? 'qty-low' : 'qty-ok'"
                                       th:text="${item.quantity}"></span>
                         <small class="text-muted" th:text="${item.unit}"></small>
                         <div class="small opacity-50">Min: <span th:text="${item.lowStockThreshold}"></span></div>
@@ -237,10 +248,10 @@
                     <td>
                                 <span class="badge qty-ok px-3 py-2 rounded-pill"
                                       style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);"
-                                      th:if="${item.quantity > item.lowStockThreshold}">OK</span>
+                                      th:if="${!item.lowStock}">OK</span>
                         <span class="badge qty-low px-3 py-2 rounded-pill"
                               style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);"
-                              th:if="${item.quantity <= item.lowStockThreshold}">LOW</span>
+                              th:if="${item.lowStock}">LOW</span>
                     </td>
                     <td>
                         <div class="d-flex flex-wrap gap-2">
@@ -309,6 +320,7 @@
                                 <select name="category" class="form-control">
                                     <option value="Detergent" th:selected="${item.category == 'Detergent'}">Detergent</option>
                                     <option value="Softener" th:selected="${item.category == 'Softener'}">Softener</option>
+                                    <option value="Stain Remover" th:selected="${item.category == 'Stain Remover'}">Stain Remover</option>
                                     <option value="Packaging" th:selected="${item.category == 'Packaging'}">Packaging</option>
                                     <option value="Other" th:selected="${item.category == 'Other'}">Other</option>
                                 </select>
@@ -327,7 +339,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">Unit Price (LKR)</label>
-                                <input type="number" step="0.01" name="unitPrice" class="form-control" th:value="${item.unitPrice}">
+                                <input type="number" step="0.01" name="unitPrice" min="0" class="form-control" th:value="${item.unitPrice}">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">Supplier</label>
@@ -338,6 +350,16 @@
                                     <option th:if="${item.supplier != null and !#lists.contains(supplierNames, item.supplier)}"
                                             th:value="${item.supplier}" th:text="${item.supplier + ' (not in supplier list)'}" selected></option>
                                 </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Stock Quantity</label>
+                                <input type="number" name="quantity" class="form-control" th:value="${item.quantity}" required min="0">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Auto-use: 1 unit per N garments</label>
+                                <input type="number" name="garmentsPerUnit" class="form-control" th:value="${item.garmentsPerUnit}" min="1" placeholder="Blank = manual only">
                             </div>
                         </div>
                     </div>
@@ -371,6 +393,7 @@
                             <select name="category" class="form-control">
                                 <option value="Detergent">Detergent</option>
                                 <option value="Softener">Softener</option>
+                                <option value="Stain Remover">Stain Remover</option>
                                 <option value="Packaging">Packaging</option>
                                 <option value="Other">Other</option>
                             </select>
@@ -393,7 +416,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-muted">Unit Price (LKR)</label>
-                            <input type="number" step="0.01" name="unitPrice" class="form-control" placeholder="e.g. 500.00">
+                            <input type="number" step="0.01" name="unitPrice" min="0" class="form-control" placeholder="e.g. 500.00">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-muted">Supplier</label>
@@ -402,6 +425,12 @@
                                 <option th:each="s : ${suppliers}" th:value="${s.supplierName}" th:text="${s.supplierName}"></option>
                             </select>
                             <div class="form-text" th:if="${#lists.isEmpty(suppliers)}">No suppliers yet. Add one on the Suppliers page first.</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label text-muted">Auto-use: 1 unit per N garments (optional)</label>
+                            <input type="number" name="garmentsPerUnit" class="form-control" min="1" placeholder="e.g. 20 means 1 unit is used for every 20 garments of an accepted order">
                         </div>
                     </div>
                 </div>

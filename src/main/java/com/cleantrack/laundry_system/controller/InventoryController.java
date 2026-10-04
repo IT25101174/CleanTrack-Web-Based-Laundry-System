@@ -9,6 +9,7 @@ import com.cleantrack.laundry_system.repository.AuditLogRepository;
 import com.cleantrack.laundry_system.repository.InventoryItemRepository;
 import com.cleantrack.laundry_system.repository.SupplierRepository;
 import com.cleantrack.laundry_system.repository.SupplyOrderRepository;
+import com.cleantrack.laundry_system.service.InventoryStockService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -18,7 +19,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Controller
@@ -26,21 +29,25 @@ import java.util.Optional;
 public class InventoryController {
 
     private static final String MANAGE_DENIED_MESSAGE = "Only the Branch Supervisor can manage inventory.";
+    private static final int MAX_GARMENTS_PER_UNIT = 100_000;
 
     private final InventoryItemRepository inventoryItemRepository;
     private final AuditLogRepository auditLogRepository;
     private final SupplierRepository supplierRepository;
     private final SupplyOrderRepository supplyOrderRepository;
+    private final InventoryStockService stockService;
 
     @Autowired
     public InventoryController(InventoryItemRepository inventoryItemRepository,
                                AuditLogRepository auditLogRepository,
                                SupplierRepository supplierRepository,
-                               SupplyOrderRepository supplyOrderRepository) {
+                               SupplyOrderRepository supplyOrderRepository,
+                               InventoryStockService stockService) {
         this.inventoryItemRepository = inventoryItemRepository;
         this.auditLogRepository = auditLogRepository;
         this.supplierRepository = supplierRepository;
         this.supplyOrderRepository = supplyOrderRepository;
+        this.stockService = stockService;
     }
 
     @GetMapping
@@ -60,10 +67,16 @@ public class InventoryController {
         }
 
         List<Supplier> suppliers = supplierRepository.findAllByOrderBySupplierNameAsc();
+        Map<String, Supplier> supplierMap = new LinkedHashMap<>();
+        for (Supplier s : suppliers) {
+            supplierMap.put(s.getSupplierName(), s);
+        }
 
         model.addAttribute("items", items);
+        model.addAttribute("lowStockItems", items.stream().filter(InventoryItem::isLowStock).toList());
         model.addAttribute("totalValue", totalValue);
         model.addAttribute("suppliers", suppliers);
+        model.addAttribute("supplierMap", supplierMap);
         model.addAttribute("supplierNames", suppliers.stream().map(Supplier::getSupplierName).toList());
         model.addAttribute("canManage", canManage(user));
         model.addAttribute("user", user);
@@ -78,6 +91,7 @@ public class InventoryController {
                           @RequestParam(required = false) String unit,
                           @RequestParam(required = false) String supplier,
                           @RequestParam(required = false) String unitPrice,
+                          @RequestParam(required = false) String garmentsPerUnit,
                           HttpSession session,
                           RedirectAttributes redirectAttributes) {
         User user = (User) session.getAttribute("user");
@@ -104,6 +118,9 @@ public class InventoryController {
         if (validationError == null) {
             validationError = validateTextLengths(categoryValue, unitValue, supplierValue);
         }
+        if (validationError == null && inventoryItemRepository.existsByItemNameIgnoreCase(name)) {
+            validationError = "An inventory item named " + name + " already exists.";
+        }
         if (validationError != null) {
             redirectAttributes.addFlashAttribute("error", validationError);
             return "redirect:/inventory";
@@ -112,6 +129,13 @@ public class InventoryController {
         BigDecimal parsedPrice = parseOptionalPrice(unitPrice);
         if (unitPrice != null && !unitPrice.isBlank() && parsedPrice == null) {
             redirectAttributes.addFlashAttribute("error", "Unit price must be a valid non-negative number.");
+            return "redirect:/inventory";
+        }
+
+        Integer parsedRule = parseGarmentsPerUnit(garmentsPerUnit);
+        if (garmentsPerUnit != null && !garmentsPerUnit.isBlank() && parsedRule == null) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Garments per unit must be a whole number between 1 and " + MAX_GARMENTS_PER_UNIT + ".");
             return "redirect:/inventory";
         }
 
@@ -132,6 +156,7 @@ public class InventoryController {
                 parseNonNegativeInt(quantity),
                 parseNonNegativeInt(lowStockThreshold),
                 categoryValue, unitValue, resolvedSupplier, parsedPrice);
+        item.setGarmentsPerUnit(parsedRule);
         inventoryItemRepository.save(item);
         auditLogRepository.save(new AuditLog("Inventory item added: " + item.getItemName() + " by " + user.getFullName()));
         redirectAttributes.addFlashAttribute("success", "Item added successfully.");
@@ -141,11 +166,13 @@ public class InventoryController {
     @PostMapping("/edit/{id}")
     public String editItem(@PathVariable Long id,
                            @RequestParam String itemName,
+                           @RequestParam String quantity,
                            @RequestParam String lowStockThreshold,
                            @RequestParam(required = false) String category,
                            @RequestParam(required = false) String unit,
                            @RequestParam(required = false) String supplier,
                            @RequestParam(required = false) String unitPrice,
+                           @RequestParam(required = false) String garmentsPerUnit,
                            HttpSession session,
                            RedirectAttributes redirectAttributes) {
         User user = (User) session.getAttribute("user");
@@ -170,12 +197,22 @@ public class InventoryController {
         String supplierValue = clean(supplier);
 
         String validationError = validateName(name);
+        Integer parsedQuantity = parseNonNegativeInt(quantity);
+        if (validationError == null && parsedQuantity == null) {
+            validationError = "Quantity must be a whole number of zero or greater.";
+        }
         Integer parsedThreshold = parseNonNegativeInt(lowStockThreshold);
         if (validationError == null && parsedThreshold == null) {
             validationError = "Low stock threshold must be a whole number of zero or greater.";
         }
         if (validationError == null) {
             validationError = validateTextLengths(categoryValue, unitValue, supplierValue);
+        }
+        if (validationError == null) {
+            Optional<InventoryItem> sameName = inventoryItemRepository.findFirstByItemNameIgnoreCase(name);
+            if (sameName.isPresent() && !sameName.get().getId().equals(id)) {
+                validationError = "An inventory item named " + name + " already exists.";
+            }
         }
         if (validationError != null) {
             redirectAttributes.addFlashAttribute("error", validationError);
@@ -185,6 +222,13 @@ public class InventoryController {
         BigDecimal parsedPrice = parseOptionalPrice(unitPrice);
         if (unitPrice != null && !unitPrice.isBlank() && parsedPrice == null) {
             redirectAttributes.addFlashAttribute("error", "Unit price must be a valid non-negative number.");
+            return "redirect:/inventory";
+        }
+
+        Integer parsedRule = parseGarmentsPerUnit(garmentsPerUnit);
+        if (garmentsPerUnit != null && !garmentsPerUnit.isBlank() && parsedRule == null) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Garments per unit must be a whole number between 1 and " + MAX_GARMENTS_PER_UNIT + ".");
             return "redirect:/inventory";
         }
 
@@ -203,14 +247,22 @@ public class InventoryController {
             resolvedSupplier = item.getSupplier();
         }
 
+        int quantityBefore = item.getQuantity();
         item.setItemName(name);
+        item.setQuantity(parsedQuantity);
         item.setLowStockThreshold(parsedThreshold);
         item.setCategory(categoryValue);
         item.setUnit(unitValue);
         item.setSupplier(resolvedSupplier);
         item.setUnitPrice(parsedPrice);
+        item.setGarmentsPerUnit(parsedRule);
         item.setUpdatedAt(LocalDateTime.now());
         inventoryItemRepository.save(item);
+
+        if (quantityBefore != parsedQuantity) {
+            auditLogRepository.save(new AuditLog("Stock count for " + name + " set from " + quantityBefore
+                    + " to " + parsedQuantity + " by " + user.getFullName()));
+        }
         auditLogRepository.save(new AuditLog("Updated inventory details for " + name + " by " + user.getFullName()));
 
         redirectAttributes.addFlashAttribute("success", "Inventory item updated successfully.");
@@ -315,16 +367,13 @@ public class InventoryController {
         }
         InventoryItem item = existing.get();
 
-        // Atomic update in the database: stock is reduced only while enough remains,
-        // so two simultaneous requests can never take the quantity below zero.
-        int updated = inventoryItemRepository.removeStock(id, parsedAmount, LocalDateTime.now());
-        if (updated == 0) {
+        // Atomic deduction (and a single low-stock alert when the threshold is crossed) in the stock service.
+        if (!stockService.consume(item, parsedAmount, "manual", user.getFullName())) {
             redirectAttributes.addFlashAttribute("error",
                     "Cannot consume more than available stock for " + item.getItemName());
             return "redirect:/inventory";
         }
 
-        auditLogRepository.save(new AuditLog("Consumed " + parsedAmount + " units of " + item.getItemName() + " by " + user.getFullName()));
         redirectAttributes.addFlashAttribute("success", "Successfully recorded usage of " + item.getItemName());
         return "redirect:/inventory";
     }
@@ -378,6 +427,19 @@ public class InventoryController {
         try {
             int value = Integer.parseInt(raw.trim());
             return value < 0 ? null : value;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    // Optional auto-use rule: 1 unit of the item is used for every N garments. Blank means no rule.
+    private Integer parseGarmentsPerUnit(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            int value = Integer.parseInt(raw.trim());
+            return (value < 1 || value > MAX_GARMENTS_PER_UNIT) ? null : value;
         } catch (NumberFormatException e) {
             return null;
         }
