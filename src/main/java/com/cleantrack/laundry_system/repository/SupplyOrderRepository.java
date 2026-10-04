@@ -10,4 +10,6 @@ public interface SupplyOrderRepository extends JpaRepository<SupplyOrder, Long> 
     List<SupplyOrder> findAllByOrderByOrderedAtDescIdDesc();
 
     long countByStatus(String status);
+
+    boolean existsByItemIdAndStatus(Long itemId, String status);
 }
