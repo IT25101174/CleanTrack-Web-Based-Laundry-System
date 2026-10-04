@@ -72,6 +72,13 @@ public class InventoryController {
             return "redirect:/inventory";
         }
 
+        // FIX: validate text field lengths against the database column limits
+        String lengthError = validateTextLengths(category, unit, supplier);
+        if (lengthError != null) {
+            redirectAttributes.addFlashAttribute("error", lengthError);
+            return "redirect:/inventory";
+        }
+
         BigDecimal parsedPrice = parseOptionalPrice(unitPrice);
         if (unitPrice != null && !unitPrice.isBlank() && parsedPrice == null) {
             redirectAttributes.addFlashAttribute("error", "Unit price must be a valid non-negative number.");
@@ -120,6 +127,13 @@ public class InventoryController {
         BigDecimal parsedPrice = parseOptionalPrice(unitPrice);
         if (unitPrice != null && !unitPrice.isBlank() && parsedPrice == null) {
             redirectAttributes.addFlashAttribute("error", "Unit price must be a valid non-negative number.");
+            return "redirect:/inventory";
+        }
+
+        // FIX: validate text field lengths against the database column limits
+        String lengthError = validateTextLengths(category, unit, supplier);
+        if (lengthError != null) {
+            redirectAttributes.addFlashAttribute("error", lengthError);
             return "redirect:/inventory";
         }
 
@@ -239,6 +253,21 @@ public class InventoryController {
         }
         if (parseNonNegativeInt(lowStockThreshold) == null) {
             return "Low stock threshold must be a whole number of zero or greater.";
+        }
+        return null;
+    }
+
+    // FIX: new helper. Limits match the column lengths in InventoryItem
+    // (category = 50, unit = 30, supplier = 100).
+    private String validateTextLengths(String category, String unit, String supplier) {
+        if (category != null && category.trim().length() > 50) {
+            return "Category cannot exceed 50 characters.";
+        }
+        if (unit != null && unit.trim().length() > 30) {
+            return "Unit cannot exceed 30 characters.";
+        }
+        if (supplier != null && supplier.trim().length() > 100) {
+            return "Supplier cannot exceed 100 characters.";
         }
         return null;
     }
