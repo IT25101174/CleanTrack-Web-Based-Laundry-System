@@ -233,6 +233,11 @@ button.stat.is-active { border-color: var(--ct-accent); }
 .form-control::placeholder { color: #6b7488; }
 .form-control:focus { background-color: rgba(10, 14, 24, 0.85); border-color: var(--ct-accent); color: var(--ct-text); box-shadow: 0 0 0 .22rem rgba(109, 141, 255, 0.22); }
 .form-control:disabled { opacity: .5; }
+.form-control.is-invalid, .form-control.is-invalid:focus {
+    border-color: var(--ct-danger); background-image: none; box-shadow: 0 0 0 .2rem rgba(248, 113, 113, 0.18);
+}
+.field-error { color: #fca5a5; font-size: .85rem; margin-top: 6px; display: flex; align-items: flex-start; gap: 6px; }
+.field-error i { margin-top: 3px; }
 select.form-control option { background: #131a2b; color: var(--ct-text); }
 .form-label { color: var(--ct-muted); font-size: .85rem; font-weight: 500; margin-bottom: 6px; }
 .form-check-input { background-color: #0e1424; border-color: var(--ct-border-strong); }

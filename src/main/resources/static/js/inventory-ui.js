@@ -316,7 +316,26 @@
         refresh();
     });
 
-    /* ---------- Errors shown inside the dialog ---------- */
+    /* ---------- Errors shown beside the field that has the problem ---------- */
+    function removeFieldError(target) {
+        if (!target || !target.classList) { return; }
+        target.classList.remove('is-invalid');
+        var next = target.nextElementSibling;
+        if (next && next.classList.contains('field-error')) { next.remove(); }
+        var group = target.closest ? target.closest('.pill-group') : null;
+        if (group && group.nextElementSibling && group.nextElementSibling.classList.contains('field-error')) {
+            group.nextElementSibling.remove();
+        }
+    }
+
+    function clearFieldErrors(form) {
+        $all('.field-error', form).forEach(function (note) { note.remove(); });
+        $all('.is-invalid', form).forEach(function (field) { field.classList.remove('is-invalid'); });
+        var top = $('.modal-error', form);
+        if (top) { top.hidden = true; }
+    }
+
+    // Message at the top of the dialog: only used when the problem cannot be tied to one field.
     function showDialogError(form, message) {
         var body = $('.modal-body', form);
         if (!body) { return; }
@@ -327,37 +346,105 @@
             box.setAttribute('role', 'alert');
             box.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i><span></span>';
             body.insertBefore(box, body.firstChild);
-            form.addEventListener('input', function () { box.hidden = true; });
-            form.addEventListener('change', function () { box.hidden = true; });
         }
         $('span', box).textContent = message;
         box.hidden = false;
         body.scrollTop = 0;
     }
 
-    // Check the automatic-use rule in the browser first, so most mistakes never leave the dialog.
-    document.addEventListener('submit', function (event) {
-        var form = event.target;
-        var block = form && form.querySelector ? form.querySelector('.usage-block') : null;
-        if (!block) { return; }
-        var basis = $('select[name="usageBasis"]', block);
-        if (!basis || basis.value === 'MANUAL' || basis.value === '') { return; }
+    function showFieldError(form, name, message) {
+        clearFieldErrors(form);
+        var field = $('[name="' + name + '"]', form);
+        var anchor = name === 'usageServices' ? $('.pill-group', form) : field;
+        if (!anchor || (field && field.type === 'hidden')) {
+            showDialogError(form, message);
+            return;
+        }
+        if (field && name !== 'usageServices') { field.classList.add('is-invalid'); }
+        var note = document.createElement('div');
+        note.className = 'field-error';
+        note.setAttribute('role', 'alert');
+        note.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+        var textNode = document.createElement('span');
+        textNode.textContent = message;
+        note.appendChild(textNode);
+        anchor.insertAdjacentElement('afterend', note);
+        if (anchor.scrollIntoView) { anchor.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        if (field && name !== 'usageServices' && field.focus) { field.focus({ preventScroll: true }); }
+    }
+
+    // The error disappears as soon as the field is edited.
+    ['input', 'change'].forEach(function (type) {
+        document.addEventListener(type, function (event) {
+            var form = event.target && event.target.closest ? event.target.closest('form[data-check-url]') : null;
+            if (form) { removeFieldError(event.target); }
+        });
+    });
+
+    // Rules the browser can check without asking the server.
+    function checkUsageLocally(form) {
+        var block = $('.usage-block', form);
+        var basis = block ? $('select[name="usageBasis"]', block) : null;
+        if (!basis || basis.value === 'MANUAL' || basis.value === '') { return null; }
         var amount = $('input[name="usageAmount"]', block).value.trim();
         var number = Number(amount);
-        var message = null;
         if (!/^\d+$/.test(amount) || number < 1 || number > 100000) {
-            message = 'Automatic use amount must be a whole number between 1 and 100000.';
-        } else if (!$all('input[name="usageServices"]', block).some(function (box) { return box.checked; })) {
-            message = 'Tick at least one service for the automatic use rule.';
+            return { field: 'usageAmount', message: 'Automatic use amount must be a whole number between 1 and 100000.' };
         }
-        if (message) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            showDialogError(form, message);
+        var anyService = $all('input[name="usageServices"]', block).some(function (box) { return box.checked; });
+        if (!anyService) {
+            return { field: 'usageServices', message: 'Select at least one service for the automatic use rule.' };
         }
+        return null;
+    }
+
+    // Add and edit dialogs: check the form first (in the browser, then with the server) and show any problem
+    // beside its field. The page is only submitted, and reloaded, when everything is valid.
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (!form || !form.hasAttribute || !form.hasAttribute('data-check-url')) { return; }
+        if (form.getAttribute('data-checked') === '1') { return; }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        clearFieldErrors(form);
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        var local = checkUsageLocally(form);
+        if (local) {
+            showFieldError(form, local.field, local.message);
+            return;
+        }
+
+        var button = $('button[type="submit"]', form);
+        if (button) { button.disabled = true; }
+        var data = new URLSearchParams(new FormData(form));
+        var itemId = form.getAttribute('data-item-id');
+        if (itemId) { data.set('id', itemId); }
+
+        function submitForReal() {
+            form.setAttribute('data-checked', '1');
+            form.submit();
+        }
+        window.fetch(form.getAttribute('data-check-url'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'fetch' },
+            body: data,
+            credentials: 'same-origin'
+        }).then(function (response) {
+            return response.ok ? response.json() : {};
+        }).then(function (result) {
+            if (result && result.message) {
+                if (button) { button.disabled = false; }
+                showFieldError(form, result.field, result.message);
+            } else {
+                submitForReal();
+            }
+        }).catch(submitForReal);
     }, true);
 
-    // The server rejected an add or edit form: re-open that dialog with the entered values and the message.
+    // Safety net: if the server still rejects a form, re-open that dialog with the entered values and the message.
     if (window.ctFormError && window.bootstrap) {
         var state = window.ctFormError;
         var target = state.target === 'add' ? $('#addItemModal') : $('#editModal' + String(state.target).replace('edit-', ''));
@@ -367,9 +454,7 @@
             $all('input, select', targetForm).forEach(function (field) {
                 var submitted = values[field.name];
                 if (!submitted || field.type === 'hidden') { return; }
-                if (field.type === 'checkbox') {
-                    field.checked = submitted.indexOf(field.value) !== -1;
-                } else if (field.type === 'radio') {
+                if (field.type === 'checkbox' || field.type === 'radio') {
                     field.checked = submitted.indexOf(field.value) !== -1;
                 } else {
                     field.value = submitted[0];

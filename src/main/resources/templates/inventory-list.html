@@ -287,7 +287,7 @@
                     <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Edit Inventory Item</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form th:action="@{/inventory/edit/{id}(id=${item.id})}" method="POST">
+                <form th:action="@{/inventory/edit/{id}(id=${item.id})}" method="POST" th:data-check-url="@{/inventory/check}" th:data-item-id="${item.id}">
                     <div class="modal-body">
                         <div class="form-section">
                             <div class="form-section-title"><i class="fa-solid fa-circle-info"></i>Basic information</div>
@@ -385,7 +385,7 @@
                 <h5 class="modal-title"><i class="fa-solid fa-box me-2 text-primary"></i>Add Inventory Item</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form th:action="@{/inventory/add}" method="POST">
+            <form th:action="@{/inventory/add}" method="POST" th:data-check-url="@{/inventory/check}">
                 <div class="modal-body">
                     <div class="form-section">
                         <div class="form-section-title"><i class="fa-solid fa-circle-info"></i>Basic information</div>

@@ -106,48 +106,23 @@ public class InventoryController {
             return "redirect:/inventory";
         }
 
+        FormProblem problem = checkItemForm(null, itemName, quantity, lowStockThreshold, category, unit,
+                supplier, unitPrice, usageBasis, usageAmount, usageServices);
+        if (problem != null) {
+            return formError(redirectAttributes, request, "add", problem.message);
+        }
+
         String name = clean(itemName);
         String categoryValue = clean(category);
         String unitValue = clean(unit);
         String supplierValue = clean(supplier);
-
-        String validationError = validateName(name);
-        if (validationError == null && parseNonNegativeInt(quantity) == null) {
-            validationError = "Quantity must be a whole number of zero or greater.";
-        }
-        if (validationError == null && parseNonNegativeInt(lowStockThreshold) == null) {
-            validationError = "Low stock threshold must be a whole number of zero or greater.";
-        }
-        if (validationError == null) {
-            validationError = validateTextLengths(categoryValue, unitValue, supplierValue);
-        }
-        if (validationError == null && inventoryItemRepository.existsByItemNameIgnoreCase(name)) {
-            validationError = "An inventory item named " + name + " already exists.";
-        }
-        if (validationError != null) {
-            return formError(redirectAttributes, request, "add", validationError);
-        }
-
         BigDecimal parsedPrice = parseOptionalPrice(unitPrice);
-        if (unitPrice != null && !unitPrice.isBlank() && parsedPrice == null) {
-            return formError(redirectAttributes, request, "add", "Unit price must be a valid non-negative number.");
-        }
-
         UsageRule rule = parseUsageRule(usageBasis, usageAmount, usageServices);
-        if (rule.error != null) {
-            return formError(redirectAttributes, request, "add", rule.error);
-        }
 
-        // The supplier must be one registered under Suppliers (a new item has no earlier value to keep).
-        String resolvedSupplier = null;
-        if (supplierValue != null) {
-            Optional<Supplier> found = supplierRepository.findBySupplierNameIgnoreCase(supplierValue);
-            if (found.isEmpty()) {
-                return formError(redirectAttributes, request, "add",
-                        "Supplier \"" + supplierValue + "\" does not exist. Add it under Suppliers first.");
-            }
-            resolvedSupplier = found.get().getSupplierName();
-        }
+        // The supplier was checked above: it is one registered under Suppliers.
+        String resolvedSupplier = supplierValue == null ? null
+                : supplierRepository.findBySupplierNameIgnoreCase(supplierValue)
+                        .map(Supplier::getSupplierName).orElse(null);
 
         InventoryItem item = new InventoryItem(
                 name,
@@ -192,53 +167,27 @@ public class InventoryController {
         }
         InventoryItem item = existing.get();
 
+        FormProblem problem = checkItemForm(id, itemName, quantity, lowStockThreshold, category, unit,
+                supplier, unitPrice, usageBasis, usageAmount, usageServices);
+        if (problem != null) {
+            return formError(redirectAttributes, request, "edit-" + id, problem.message);
+        }
+
         String name = clean(itemName);
         String categoryValue = clean(category);
         String unitValue = clean(unit);
         String supplierValue = clean(supplier);
-
-        String validationError = validateName(name);
         Integer parsedQuantity = parseNonNegativeInt(quantity);
-        if (validationError == null && parsedQuantity == null) {
-            validationError = "Quantity must be a whole number of zero or greater.";
-        }
         Integer parsedThreshold = parseNonNegativeInt(lowStockThreshold);
-        if (validationError == null && parsedThreshold == null) {
-            validationError = "Low stock threshold must be a whole number of zero or greater.";
-        }
-        if (validationError == null) {
-            validationError = validateTextLengths(categoryValue, unitValue, supplierValue);
-        }
-        if (validationError == null) {
-            Optional<InventoryItem> sameName = inventoryItemRepository.findFirstByItemNameIgnoreCase(name);
-            if (sameName.isPresent() && !sameName.get().getId().equals(id)) {
-                validationError = "An inventory item named " + name + " already exists.";
-            }
-        }
-        if (validationError != null) {
-            return formError(redirectAttributes, request, "edit-" + id, validationError);
-        }
-
         BigDecimal parsedPrice = parseOptionalPrice(unitPrice);
-        if (unitPrice != null && !unitPrice.isBlank() && parsedPrice == null) {
-            return formError(redirectAttributes, request, "edit-" + id, "Unit price must be a valid non-negative number.");
-        }
-
         UsageRule rule = parseUsageRule(usageBasis, usageAmount, usageServices);
-        if (rule.error != null) {
-            return formError(redirectAttributes, request, "edit-" + id, rule.error);
-        }
 
-        // A changed supplier must be a registered one. An unchanged value is kept as it is,
+        // A changed supplier is a registered one (checked above). An unchanged value is kept as it is,
         // so items created before supplier management existed can still be edited.
         String resolvedSupplier = supplierValue;
         if (supplierValue != null && !supplierValue.equalsIgnoreCase(item.getSupplier())) {
-            Optional<Supplier> found = supplierRepository.findBySupplierNameIgnoreCase(supplierValue);
-            if (found.isEmpty()) {
-                return formError(redirectAttributes, request, "edit-" + id,
-                        "Supplier \"" + supplierValue + "\" does not exist. Add it under Suppliers first.");
-            }
-            resolvedSupplier = found.get().getSupplierName();
+            resolvedSupplier = supplierRepository.findBySupplierNameIgnoreCase(supplierValue)
+                    .map(Supplier::getSupplierName).orElse(supplierValue);
         } else if (supplierValue != null) {
             resolvedSupplier = item.getSupplier();
         }
@@ -276,6 +225,106 @@ public class InventoryController {
         redirectAttributes.addFlashAttribute("formTarget", target);
         redirectAttributes.addFlashAttribute("formValues", values);
         return "redirect:/inventory";
+    }
+
+    // One problem found in the add/edit form: which field it belongs to and the message to show beside it.
+    private static class FormProblem {
+        final String field;
+        final String message;
+
+        FormProblem(String field, String message) {
+            this.field = field;
+            this.message = message;
+        }
+    }
+
+    // Checks the add (id == null) or edit (id = item id) form and returns the first problem, or null when valid.
+    // Used by the add and edit actions and by the /inventory/check endpoint that the dialogs call, so the rules
+    // are written once.
+    private FormProblem checkItemForm(Long id, String itemName, String quantity, String lowStockThreshold,
+                                      String category, String unit, String supplier, String unitPrice,
+                                      String usageBasis, String usageAmount, java.util.List<String> usageServices) {
+        String name = clean(itemName);
+        String nameError = validateName(name);
+        if (nameError != null) {
+            return new FormProblem("itemName", nameError);
+        }
+        if (parseNonNegativeInt(quantity) == null) {
+            return new FormProblem("quantity", "Quantity must be a whole number of zero or greater.");
+        }
+        if (parseNonNegativeInt(lowStockThreshold) == null) {
+            return new FormProblem("lowStockThreshold", "Low stock threshold must be a whole number of zero or greater.");
+        }
+        String categoryValue = clean(category);
+        String unitValue = clean(unit);
+        String supplierValue = clean(supplier);
+        // Limits match the column lengths in InventoryItem (category = 50, unit = 30, supplier = 100).
+        if (categoryValue != null && categoryValue.length() > 50) {
+            return new FormProblem("category", "Category cannot exceed 50 characters.");
+        }
+        if (unitValue != null && unitValue.length() > 30) {
+            return new FormProblem("unit", "Unit cannot exceed 30 characters.");
+        }
+        if (supplierValue != null && supplierValue.length() > 100) {
+            return new FormProblem("supplier", "Supplier cannot exceed 100 characters.");
+        }
+        Optional<InventoryItem> sameName = inventoryItemRepository.findFirstByItemNameIgnoreCase(name);
+        if (sameName.isPresent() && (id == null || !sameName.get().getId().equals(id))) {
+            return new FormProblem("itemName", "An inventory item named " + name + " already exists.");
+        }
+        if (unitPrice != null && !unitPrice.isBlank() && parseOptionalPrice(unitPrice) == null) {
+            return new FormProblem("unitPrice", "Unit price must be a valid non-negative number.");
+        }
+        UsageRule rule = parseUsageRule(usageBasis, usageAmount, usageServices);
+        if (rule.error != null) {
+            String field = rule.error.contains("service") ? "usageServices"
+                    : rule.error.contains("amount") ? "usageAmount" : "usageBasis";
+            return new FormProblem(field, rule.error);
+        }
+        if (supplierValue != null) {
+            // A new item, or a changed supplier, must use a registered supplier. An unchanged value is kept.
+            String currentSupplier = null;
+            if (id != null) {
+                Optional<InventoryItem> current = inventoryItemRepository.findById(id);
+                currentSupplier = current.map(InventoryItem::getSupplier).orElse(null);
+            }
+            boolean unchanged = currentSupplier != null && supplierValue.equalsIgnoreCase(currentSupplier);
+            if (!unchanged && supplierRepository.findBySupplierNameIgnoreCase(supplierValue).isEmpty()) {
+                return new FormProblem("supplier",
+                        "Supplier \"" + supplierValue + "\" does not exist. Add it under Suppliers first.");
+            }
+        }
+        return null;
+    }
+
+    // Called by the add/edit dialogs before they submit, so a problem is shown beside the field without
+    // reloading the page. Returns {} when the form is valid, or {"field": ..., "message": ...}.
+    @PostMapping("/check")
+    @ResponseBody
+    public Map<String, String> checkForm(@RequestParam(required = false) Long id,
+                                         @RequestParam(required = false) String itemName,
+                                         @RequestParam(required = false) String quantity,
+                                         @RequestParam(required = false) String lowStockThreshold,
+                                         @RequestParam(required = false) String category,
+                                         @RequestParam(required = false) String unit,
+                                         @RequestParam(required = false) String supplier,
+                                         @RequestParam(required = false) String unitPrice,
+                                         @RequestParam(required = false) String usageBasis,
+                                         @RequestParam(required = false) String usageAmount,
+                                         @RequestParam(required = false) java.util.List<String> usageServices,
+                                         HttpSession session) {
+        Map<String, String> result = new LinkedHashMap<>();
+        User user = (User) session.getAttribute("user");
+        if (user == null || isCustomer(user) || !canManage(user)) {
+            return result; // the normal submit explains the access problem
+        }
+        FormProblem problem = checkItemForm(id, itemName, quantity, lowStockThreshold, category, unit,
+                supplier, unitPrice, usageBasis, usageAmount, usageServices);
+        if (problem != null) {
+            result.put("field", problem.field);
+            result.put("message", problem.message);
+        }
+        return result;
     }
 
     @PostMapping("/delete/{id}")
@@ -470,20 +519,6 @@ public class InventoryController {
         }
         if (name.length() > 100) {
             return "Item name cannot exceed 100 characters.";
-        }
-        return null;
-    }
-
-    // Limits match the column lengths in InventoryItem (category = 50, unit = 30, supplier = 100).
-    private String validateTextLengths(String category, String unit, String supplier) {
-        if (category != null && category.length() > 50) {
-            return "Category cannot exceed 50 characters.";
-        }
-        if (unit != null && unit.length() > 30) {
-            return "Unit cannot exceed 30 characters.";
-        }
-        if (supplier != null && supplier.length() > 100) {
-            return "Supplier cannot exceed 100 characters.";
         }
         return null;
     }
