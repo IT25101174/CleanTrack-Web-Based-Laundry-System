@@ -251,6 +251,11 @@ select.form-control option { background: #131a2b; color: var(--ct-text); }
 
 /* ---------- Modals ---------- */
 .modal-content { background: var(--ct-surface-solid); border: 1px solid var(--ct-border-strong); border-radius: 16px; color: var(--ct-text); }
+/* The dialogs wrap header, body and footer in a form. Make the form part of the flex column so the
+   body scrolls and the footer buttons stay reachable on short screens. */
+.modal-content > form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.modal-dialog-scrollable .modal-content { max-height: 100%; overflow: hidden; }
+.modal-dialog-scrollable .modal-body { overflow-y: auto; }
 .modal-header { border-bottom: 1px solid var(--ct-border); }
 .modal-footer { border-top: 1px solid var(--ct-border); }
 .modal-backdrop.show { opacity: .65; }
