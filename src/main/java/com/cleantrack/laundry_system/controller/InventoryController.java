@@ -401,7 +401,7 @@ public class InventoryController {
             rule.basis = "MANUAL";
             return rule;
         }
-        if (!"PER_GARMENTS".equals(basis) && !"PER_ORDER".equals(basis)) {
+        if (!com.cleantrack.laundry_system.strategy.UsageStrategyFactory.isKnown(basis)) {
             rule.error = "Choose a valid automatic-use option.";
             return rule;
         }

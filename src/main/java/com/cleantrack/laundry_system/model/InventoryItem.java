@@ -1,4 +1,6 @@
 package com.cleantrack.laundry_system.model;
+import com.cleantrack.laundry_system.strategy.UsageStrategy;
+import com.cleantrack.laundry_system.strategy.UsageStrategyFactory;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -124,9 +126,15 @@ public class InventoryItem {
 
     // True when the item has a complete automatic-use rule (not mapped to a column).
     public boolean isAutoUse() {
-        return ("PER_GARMENTS".equals(usageBasis) || "PER_ORDER".equals(usageBasis))
+        return usageStrategy().isAutomatic()
                 && usageAmount != null && usageAmount > 0
                 && usageServices != null && !usageServices.isBlank();
+    }
+
+    // Strategy pattern: the item is the context and delegates the usage calculation to the strategy
+    // that matches its usage basis (manual, per garments or per order).
+    private UsageStrategy usageStrategy() {
+        return UsageStrategyFactory.forBasis(usageBasis);
     }
 
     // Does the rule apply to this service type? A missing or unknown service type counts as WASH_ONLY,
@@ -152,10 +160,7 @@ public class InventoryItem {
         if (!isAutoUse() || garments <= 0) {
             return 0;
         }
-        if ("PER_ORDER".equals(usageBasis)) {
-            return usageAmount;
-        }
-        return (int) Math.ceil(garments / (double) usageAmount);
+        return usageStrategy().unitsFor(garments, usageAmount);
     }
 
     // Short description shown on the inventory page, for example "1 per 20 garments (Wash Only, Wash & Iron)".
@@ -172,10 +177,7 @@ public class InventoryItem {
                 default: break;
             }
         }
-        String basis = "PER_ORDER".equals(usageBasis)
-                ? usageAmount + " per order"
-                : "1 per " + usageAmount + " garments";
-        return basis + " (" + String.join(", ", names) + ")";
+        return usageStrategy().describe(usageAmount) + " (" + String.join(", ", names) + ")";
     }
 
     public LocalDateTime getUpdatedAt() {
