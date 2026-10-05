@@ -94,6 +94,7 @@ public class InventoryController {
                           @RequestParam(required = false) String usageBasis,
                           @RequestParam(required = false) String usageAmount,
                           @RequestParam(required = false) java.util.List<String> usageServices,
+                          jakarta.servlet.http.HttpServletRequest request,
                           HttpSession session,
                           RedirectAttributes redirectAttributes) {
         User user = (User) session.getAttribute("user");
@@ -124,20 +125,17 @@ public class InventoryController {
             validationError = "An inventory item named " + name + " already exists.";
         }
         if (validationError != null) {
-            redirectAttributes.addFlashAttribute("error", validationError);
-            return "redirect:/inventory";
+            return formError(redirectAttributes, request, "add", validationError);
         }
 
         BigDecimal parsedPrice = parseOptionalPrice(unitPrice);
         if (unitPrice != null && !unitPrice.isBlank() && parsedPrice == null) {
-            redirectAttributes.addFlashAttribute("error", "Unit price must be a valid non-negative number.");
-            return "redirect:/inventory";
+            return formError(redirectAttributes, request, "add", "Unit price must be a valid non-negative number.");
         }
 
         UsageRule rule = parseUsageRule(usageBasis, usageAmount, usageServices);
         if (rule.error != null) {
-            redirectAttributes.addFlashAttribute("error", rule.error);
-            return "redirect:/inventory";
+            return formError(redirectAttributes, request, "add", rule.error);
         }
 
         // The supplier must be one registered under Suppliers (a new item has no earlier value to keep).
@@ -145,9 +143,8 @@ public class InventoryController {
         if (supplierValue != null) {
             Optional<Supplier> found = supplierRepository.findBySupplierNameIgnoreCase(supplierValue);
             if (found.isEmpty()) {
-                redirectAttributes.addFlashAttribute("error",
+                return formError(redirectAttributes, request, "add",
                         "Supplier \"" + supplierValue + "\" does not exist. Add it under Suppliers first.");
-                return "redirect:/inventory";
             }
             resolvedSupplier = found.get().getSupplierName();
         }
@@ -176,6 +173,7 @@ public class InventoryController {
                            @RequestParam(required = false) String usageBasis,
                            @RequestParam(required = false) String usageAmount,
                            @RequestParam(required = false) java.util.List<String> usageServices,
+                           jakarta.servlet.http.HttpServletRequest request,
                            HttpSession session,
                            RedirectAttributes redirectAttributes) {
         User user = (User) session.getAttribute("user");
@@ -218,20 +216,17 @@ public class InventoryController {
             }
         }
         if (validationError != null) {
-            redirectAttributes.addFlashAttribute("error", validationError);
-            return "redirect:/inventory";
+            return formError(redirectAttributes, request, "edit-" + id, validationError);
         }
 
         BigDecimal parsedPrice = parseOptionalPrice(unitPrice);
         if (unitPrice != null && !unitPrice.isBlank() && parsedPrice == null) {
-            redirectAttributes.addFlashAttribute("error", "Unit price must be a valid non-negative number.");
-            return "redirect:/inventory";
+            return formError(redirectAttributes, request, "edit-" + id, "Unit price must be a valid non-negative number.");
         }
 
         UsageRule rule = parseUsageRule(usageBasis, usageAmount, usageServices);
         if (rule.error != null) {
-            redirectAttributes.addFlashAttribute("error", rule.error);
-            return "redirect:/inventory";
+            return formError(redirectAttributes, request, "edit-" + id, rule.error);
         }
 
         // A changed supplier must be a registered one. An unchanged value is kept as it is,
@@ -240,9 +235,8 @@ public class InventoryController {
         if (supplierValue != null && !supplierValue.equalsIgnoreCase(item.getSupplier())) {
             Optional<Supplier> found = supplierRepository.findBySupplierNameIgnoreCase(supplierValue);
             if (found.isEmpty()) {
-                redirectAttributes.addFlashAttribute("error",
+                return formError(redirectAttributes, request, "edit-" + id,
                         "Supplier \"" + supplierValue + "\" does not exist. Add it under Suppliers first.");
-                return "redirect:/inventory";
             }
             resolvedSupplier = found.get().getSupplierName();
         } else if (supplierValue != null) {
@@ -268,6 +262,19 @@ public class InventoryController {
         auditLogRepository.save(new AuditLog("Updated inventory details for " + name + " by " + user.getFullName()));
 
         redirectAttributes.addFlashAttribute("success", "Inventory item updated successfully.");
+        return "redirect:/inventory";
+    }
+
+    // A form error is returned to the same dialog: the message and the entered values are kept in flash
+    // attributes, and the page re-opens the dialog with the values filled in and the message inside it.
+    private String formError(RedirectAttributes redirectAttributes,
+                             jakarta.servlet.http.HttpServletRequest request,
+                             String target, String message) {
+        Map<String, List<String>> values = new LinkedHashMap<>();
+        request.getParameterMap().forEach((key, value) -> values.put(key, new java.util.ArrayList<>(java.util.Arrays.asList(value))));
+        redirectAttributes.addFlashAttribute("formError", message);
+        redirectAttributes.addFlashAttribute("formTarget", target);
+        redirectAttributes.addFlashAttribute("formValues", values);
         return "redirect:/inventory";
     }
 

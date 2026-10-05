@@ -315,4 +315,71 @@
         boxes.forEach(function (box) { box.addEventListener('change', refresh); });
         refresh();
     });
+
+    /* ---------- Errors shown inside the dialog ---------- */
+    function showDialogError(form, message) {
+        var body = $('.modal-body', form);
+        if (!body) { return; }
+        var box = $('.modal-error', body);
+        if (!box) {
+            box = document.createElement('div');
+            box.className = 'alert alert-danger modal-error';
+            box.setAttribute('role', 'alert');
+            box.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i><span></span>';
+            body.insertBefore(box, body.firstChild);
+            form.addEventListener('input', function () { box.hidden = true; });
+            form.addEventListener('change', function () { box.hidden = true; });
+        }
+        $('span', box).textContent = message;
+        box.hidden = false;
+        body.scrollTop = 0;
+    }
+
+    // Check the automatic-use rule in the browser first, so most mistakes never leave the dialog.
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        var block = form && form.querySelector ? form.querySelector('.usage-block') : null;
+        if (!block) { return; }
+        var basis = $('select[name="usageBasis"]', block);
+        if (!basis || basis.value === 'MANUAL' || basis.value === '') { return; }
+        var amount = $('input[name="usageAmount"]', block).value.trim();
+        var number = Number(amount);
+        var message = null;
+        if (!/^\d+$/.test(amount) || number < 1 || number > 100000) {
+            message = 'Automatic use amount must be a whole number between 1 and 100000.';
+        } else if (!$all('input[name="usageServices"]', block).some(function (box) { return box.checked; })) {
+            message = 'Tick at least one service for the automatic use rule.';
+        }
+        if (message) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            showDialogError(form, message);
+        }
+    }, true);
+
+    // The server rejected an add or edit form: re-open that dialog with the entered values and the message.
+    if (window.ctFormError && window.bootstrap) {
+        var state = window.ctFormError;
+        var target = state.target === 'add' ? $('#addItemModal') : $('#editModal' + String(state.target).replace('edit-', ''));
+        var targetForm = target ? $('form', target) : null;
+        if (targetForm) {
+            var values = state.values || {};
+            $all('input, select', targetForm).forEach(function (field) {
+                var submitted = values[field.name];
+                if (!submitted || field.type === 'hidden') { return; }
+                if (field.type === 'checkbox') {
+                    field.checked = submitted.indexOf(field.value) !== -1;
+                } else if (field.type === 'radio') {
+                    field.checked = submitted.indexOf(field.value) !== -1;
+                } else {
+                    field.value = submitted[0];
+                }
+            });
+            $all('select, input[name="usageAmount"], input[name="usageServices"]', targetForm).forEach(function (field) {
+                field.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            showDialogError(targetForm, state.message);
+            window.bootstrap.Modal.getOrCreateInstance(target).show();
+        }
+    }
 })();

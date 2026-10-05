@@ -472,6 +472,14 @@
     </div>
 </div>
 
+<!-- A rejected add/edit form is sent back here so the dialog can re-open with the message inside it -->
+<script th:if="${formError != null}" th:inline="javascript">
+    window.ctFormError = {
+        target: /*[[${formTarget}]]*/ 'add',
+        message: /*[[${formError}]]*/ '',
+        values: /*[[${formValues}]]*/ {}
+    };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/inventory-ui.js}"></script>
 </body>
