@@ -5,6 +5,7 @@ import com.cleantrack.laundry_system.model.Order;
 import com.cleantrack.laundry_system.model.User;
 import com.cleantrack.laundry_system.repository.InvoiceRepository;
 import com.cleantrack.laundry_system.repository.OrderRepository;
+import com.cleantrack.laundry_system.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -24,12 +25,14 @@ public class InvoiceController {
     private final InvoiceRepository invoiceRepository;
     private final OrderRepository orderRepository;
     private final com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository;
+    private final EmailService emailService;
 
     @Autowired
-    public InvoiceController(InvoiceRepository invoiceRepository, OrderRepository orderRepository, com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository) {
+    public InvoiceController(InvoiceRepository invoiceRepository, OrderRepository orderRepository, com.cleantrack.laundry_system.repository.AuditLogRepository auditLogRepository, EmailService emailService) {
         this.invoiceRepository = invoiceRepository;
         this.orderRepository = orderRepository;
         this.auditLogRepository = auditLogRepository;
+        this.emailService = emailService;
     }
 
     @GetMapping
@@ -141,6 +144,11 @@ public class InvoiceController {
                             order.setStatus("Order Placed");
                             orderRepository.save(order);
                         }
+                        
+                        // Send email
+                        if (order.getCustomer() != null && order.getCustomer().getEmail() != null) {
+                            emailService.sendStatusEmail(order.getCustomer().getEmail(), "PAID", order.getId());
+                        }
                     }
                     
                     auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Invoice paid for Order ID: " + invoice.getOrderId() + " by " + user.getFullName()));
@@ -182,6 +190,11 @@ public class InvoiceController {
                     if ("AWAITING_PAYMENT".equals(order.getStatus()) || "Order Placed".equals(order.getStatus())) {
                         order.setStatus("Order Placed");
                         orderRepository.save(order);
+                    }
+                    
+                    // Send email
+                    if (order.getCustomer() != null && order.getCustomer().getEmail() != null) {
+                        emailService.sendStatusEmail(order.getCustomer().getEmail(), "PAID", order.getId());
                     }
                 }
                 
