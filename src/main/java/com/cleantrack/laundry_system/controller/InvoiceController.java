@@ -132,6 +132,17 @@ public class InvoiceController {
                     invoice.setPaymentMethod(paymentMethod);
                     invoice.setStatus("PAID");
                     invoiceRepository.save(invoice);
+                    
+                    // Workflow Fix: Push order to queue when paid
+                    Optional<Order> optOrder = orderRepository.findById(invoice.getOrderId());
+                    if (optOrder.isPresent()) {
+                        Order order = optOrder.get();
+                        if ("AWAITING_PAYMENT".equals(order.getStatus()) || "Order Placed".equals(order.getStatus())) {
+                            order.setStatus("Order Placed");
+                            orderRepository.save(order);
+                        }
+                    }
+                    
                     auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Invoice paid for Order ID: " + invoice.getOrderId() + " by " + user.getFullName()));
                 } else {
                     return "redirect:/invoices?error=InsufficientPayment";
@@ -163,6 +174,17 @@ public class InvoiceController {
                 invoice.setStatus("PAID");
                 invoice.setAmountPaid(invoice.getTotalAmount());
                 invoiceRepository.save(invoice);
+                
+                // Workflow Fix: Push order to queue when bank transfer is approved
+                Optional<Order> optOrder = orderRepository.findById(invoice.getOrderId());
+                if (optOrder.isPresent()) {
+                    Order order = optOrder.get();
+                    if ("AWAITING_PAYMENT".equals(order.getStatus()) || "Order Placed".equals(order.getStatus())) {
+                        order.setStatus("Order Placed");
+                        orderRepository.save(order);
+                    }
+                }
+                
                 auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Bank transfer approved for Invoice ID: " + invoice.getId() + " by " + user.getFullName()));
             } else {
                 return "redirect:/invoices?error=InvalidStatusForApproval";
