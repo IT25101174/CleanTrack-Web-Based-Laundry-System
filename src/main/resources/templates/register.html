@@ -276,22 +276,6 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Role Profile</label>
-                            <div class="input-group-custom">
-                                <select th:field="*{role}" class="form-control-custom" required>
-                                    <option value="" disabled selected>Select system role</option>
-                                    <option value="CUSTOMER">Customer</option>
-                                    <option value="COUNTER_STAFF">Counter Staff</option>
-                                    <option value="LAUNDRY_STAFF">Laundry Staff</option>
-                                    <option value="BRANCH_SUPERVISOR">Branch Supervisor</option>
-                                    <option value="SHOP_OWNER">Shop Owner</option>
-                                    <option value="ADMIN">System Administrator</option>
-                                </select>
-                                <i class="fa-solid fa-user-shield"></i>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
                             <label class="form-label">Password</label>
                             <div class="input-group-custom">
                                 <input type="password" th:field="*{password}" class="form-control-custom" placeholder="Create secure password" required>

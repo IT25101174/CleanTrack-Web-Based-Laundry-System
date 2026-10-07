@@ -2,7 +2,6 @@ package com.cleantrack.laundry_system.controller;
 
 import com.cleantrack.laundry_system.model.Role;
 import com.cleantrack.laundry_system.model.User;
-import com.cleantrack.laundry_system.repository.InventoryItemRepository;
 import com.cleantrack.laundry_system.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import org.mindrot.jbcrypt.BCrypt;
@@ -20,12 +19,10 @@ import java.util.Optional;
 public class AuthController {
 
     private final UserRepository userRepository;
-    private final InventoryItemRepository inventoryItemRepository;
 
     @Autowired
-    public AuthController(UserRepository userRepository, InventoryItemRepository inventoryItemRepository) {
+    public AuthController(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.inventoryItemRepository = inventoryItemRepository;
     }
 
     @GetMapping("/")
@@ -92,10 +89,7 @@ public class AuthController {
             model.addAttribute("error", "Full name is required.");
             return "register";
         }
-        if (user.getRole() == null) {
-            model.addAttribute("error", "Please select a role.");
-            return "register";
-        }
+        
 
         // Check for existing username
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
@@ -112,10 +106,56 @@ public class AuthController {
         // Secure password with BCrypt
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
         user.setPassword(hashedPassword);
+        user.setRole(Role.CUSTOMER);
         
         userRepository.save(user);
 
         return "redirect:/login?registered=true";
+    }
+
+
+    @GetMapping("/admin/users/new")
+    public String showAdminRegistrationForm(HttpSession session, Model model) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || loggedInUser.getRole() != Role.ADMIN) {
+            return "redirect:/login";
+        }
+        model.addAttribute("user", new User());
+        return "admin-create-user";
+    }
+
+    @PostMapping("/admin/users/new")
+    public String adminRegisterUser(@ModelAttribute User user, HttpSession session, Model model) {
+        User loggedInUser = (User) session.getAttribute("user");
+        if (loggedInUser == null || loggedInUser.getRole() != Role.ADMIN) {
+            return "redirect:/login";
+        }
+
+        // Basic validations
+        if (user.getUsername() == null || user.getUsername().trim().isEmpty() ||
+            user.getPassword() == null || user.getPassword().length() < 6 ||
+            user.getEmail() == null || !user.getEmail().contains("@") ||
+            user.getFullName() == null || user.getFullName().trim().isEmpty() ||
+            user.getRole() == null) {
+            model.addAttribute("error", "Please fill all required fields correctly.");
+            return "admin-create-user";
+        }
+
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            model.addAttribute("error", "Username already exists.");
+            return "admin-create-user";
+        }
+
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            model.addAttribute("error", "Email is already registered.");
+            return "admin-create-user";
+        }
+
+        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
+        user.setPassword(hashedPassword);
+        userRepository.save(user);
+
+        return "redirect:/dashboard";
     }
 
     @GetMapping("/logout")
@@ -131,12 +171,6 @@ public class AuthController {
             return "redirect:/login";
         }
         model.addAttribute("user", user);
-
-        // UC-05 extension 7a: the supervisor dashboard shows a low-stock warning.
-        String role = user.getRole() != null ? user.getRole().name() : "";
-        if ("BRANCH_SUPERVISOR".equals(role) || "ADMIN".equals(role)) {
-            model.addAttribute("lowStockItems", inventoryItemRepository.findLowStockItems());
-        }
         return "dashboard";
     }
 }
