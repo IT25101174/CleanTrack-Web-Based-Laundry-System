@@ -118,6 +118,10 @@ public class OrderController {
         if ("BANK_TRANSFER".equals(paymentMethod)) {
             invoice.setStatus("PENDING_APPROVAL");
             invoice.setAmountPaid(java.math.BigDecimal.ZERO);
+            
+            // Workflow fix: Keep order out of queue until payment is approved
+            savedOrder.setStatus("AWAITING_PAYMENT");
+            orderRepository.save(savedOrder);
 
             // Handle file upload
             if (bankReceipt != null && !bankReceipt.isEmpty()) {
