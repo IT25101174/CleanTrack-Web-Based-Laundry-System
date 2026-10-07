@@ -182,19 +182,6 @@
             </div>
         </div>
 
-        <!-- Low-stock warning (Branch Supervisor / Admin) -->
-        <div th:if="${lowStockItems != null and !#lists.isEmpty(lowStockItems)}" class="alert mb-4 d-flex align-items-start" role="alert"
-             style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; color: #f87171;">
-            <i class="fa-solid fa-triangle-exclamation me-3 fa-lg mt-1"></i>
-            <div>
-                <strong>Low stock warning:</strong>
-                <span th:each="li, st : ${lowStockItems}">
-                    <span th:text="${li.itemName + ' (' + li.quantity + ' left, minimum ' + li.lowStockThreshold + ')'}"></span><span th:unless="${st.last}">, </span>
-                </span>
-                <a href="/inventory" class="ms-2" style="color: #fca5a5;">Open inventory</a>
-            </div>
-        </div>
-
         <!-- Available Application Modules Grid (For team members to mount logic) -->
         <div class="row">
             <!-- Customer module -->
@@ -263,6 +250,20 @@
                     </div>
                     <div class="mt-3">
                         <a href="/inventory" class="btn btn-primary-custom w-100">Access Module (Hapuarachchi)</a>
+                    </div>
+                </div>
+            </div>
+
+                        <!-- Admin User Creation module -->
+            <div class="col-md-4 mb-4" th:if="${user.role != null and user.role.name() == 'ADMIN'}">
+                <div class="glass-card text-center h-100 py-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="grid-item-icon"><i class="fa-solid fa-user-plus"></i></div>
+                        <h4>Employee Accounts</h4>
+                        <p class="text-muted small">Create system accounts for staff, supervisors, and other roles.</p>
+                    </div>
+                    <div class="mt-3">
+                        <a th:href="@{/admin/users/new}" class="btn btn-primary-custom w-100">Access Module (Admin)</a>
                     </div>
                 </div>
             </div>
