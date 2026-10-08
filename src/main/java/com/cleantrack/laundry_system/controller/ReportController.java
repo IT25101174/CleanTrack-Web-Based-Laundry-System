@@ -91,6 +91,15 @@ public class ReportController {
             return "redirect:/login";
         }
         
+        if (noteText == null || noteText.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Note cannot be empty.");
+            return "redirect:/reports";
+        }
+        if (noteText.length() > 500) {
+            redirectAttributes.addFlashAttribute("error", "Note is too long. Maximum 500 characters allowed.");
+            return "redirect:/reports";
+        }
+        
         com.cleantrack.laundry_system.model.ReportNote note = new com.cleantrack.laundry_system.model.ReportNote(noteText, user.getFullName());
         reportNoteRepository.save(note);
         auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Executive Note added by " + user.getFullName()));
@@ -103,6 +112,15 @@ public class ReportController {
         com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
         if (user == null || (!"ADMIN".equals(user.getRole().name()) && !"BRANCH_SUPERVISOR".equals(user.getRole().name()))) {
             return "redirect:/login";
+        }
+        
+        if (noteText == null || noteText.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Note cannot be empty.");
+            return "redirect:/reports";
+        }
+        if (noteText.length() > 500) {
+            redirectAttributes.addFlashAttribute("error", "Note is too long. Maximum 500 characters allowed.");
+            return "redirect:/reports";
         }
         
         reportNoteRepository.findById(id).ifPresent(note -> {
