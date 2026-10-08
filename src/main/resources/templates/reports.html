@@ -11,6 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
@@ -327,6 +329,11 @@
             <div class="col-lg-6 mb-4">
                 <div class="glass-card">
                     <h5 class="mb-4"><i class="fa-solid fa-spinner me-2 text-info"></i>Order Workflow Breakdown</h5>
+                    
+                    <!-- Chart.js Canvas -->
+                    <div class="mb-4" style="height: 250px; display: flex; justify-content: center;">
+                        <canvas id="orderChart"></canvas>
+                    </div>
 
                     <div class="stat-item">
                         <span><i class="fa-solid fa-cart-arrow-down text-secondary me-2"></i>Order Placed</span>
@@ -366,8 +373,12 @@
             <!-- Complaint Stats Breakdown -->
             <div class="col-lg-6 mb-4">
                 <div class="glass-card h-100">
-                    <h5 class="mb-4"><i class="fa-solid fa-headset me-2 text-warning"></i>Complaint Status Breakdown
-                    </h5>
+                    <h5 class="mb-4"><i class="fa-solid fa-headset me-2 text-warning"></i>Complaint Status Breakdown</h5>
+                    
+                    <!-- Chart.js Canvas -->
+                    <div class="mb-4" style="height: 250px; display: flex; justify-content: center;">
+                        <canvas id="complaintChart"></canvas>
+                    </div>
 
                     <div class="stat-item mt-2">
                         <span><i class="fa-solid fa-door-open text-danger me-2"></i>New / Open</span>
@@ -492,6 +503,97 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Chart.js Initialization Scripts -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Order Status Pie Chart ---
+            const ctxOrder = document.getElementById('orderChart').getContext('2d');
+            new Chart(ctxOrder, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Placed', 'Received', 'Washing', 'Drying', 'Ironing', 'Ready', 'Completed'],
+                    datasets: [{
+                        data: [
+                            /*[[${ordersPlaced}]]*/ 0,
+                            /*[[${ordersReceived}]]*/ 0,
+                            /*[[${ordersWashing}]]*/ 0,
+                            /*[[${ordersDrying}]]*/ 0,
+                            /*[[${ordersIroning}]]*/ 0,
+                            /*[[${ordersReady}]]*/ 0,
+                            /*[[${ordersCompleted}]]*/ 0
+                        ],
+                        backgroundColor: [
+                            '#6c757d', // Placed
+                            '#0d6efd', // Received
+                            '#0dcaf0', // Washing
+                            '#ffc107', // Drying
+                            '#dc3545', // Ironing
+                            '#198754', // Ready
+                            '#20c997'  // Completed
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#f3f4f6' } }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // --- Complaint Status Bar Chart ---
+            const ctxComplaint = document.getElementById('complaintChart').getContext('2d');
+            new Chart(ctxComplaint, {
+                type: 'bar',
+                data: {
+                    labels: ['Open', 'In Progress', 'Resolved'],
+                    datasets: [{
+                        label: 'Number of Complaints',
+                        data: [
+                            /*[[${openComplaints}]]*/ 0,
+                            /*[[${progressComplaints}]]*/ 0,
+                            /*[[${resolvedComplaints}]]*/ 0
+                        ],
+                        backgroundColor: [
+                            'rgba(220, 53, 69, 0.7)',  // Open - Danger
+                            'rgba(255, 193, 7, 0.7)',  // Progress - Warning
+                            'rgba(25, 135, 84, 0.7)'   // Resolved - Success
+                        ],
+                        borderColor: [
+                            '#dc3545',
+                            '#ffc107',
+                            '#198754'
+                        ],
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#9ca3af', stepSize: 1 },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#f3f4f6' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
