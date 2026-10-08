@@ -400,7 +400,7 @@
             CleanTrack
         </div>
 
-        <ul class="nav-links">
+                <ul class="nav-links">
             <a th:href="@{/dashboard}" style="text-decoration: none;">
                 <li class="nav-item active">
                     <i class="fa-solid fa-house"></i>
@@ -410,7 +410,7 @@
             <a th:href="@{/orders}" style="text-decoration: none;">
                 <li class="nav-item">
                     <i class="fa-solid fa-shirt"></i>
-                    My Orders
+                    Orders
                 </li>
             </a>
             <a th:href="@{/invoices}" style="text-decoration: none;">
@@ -419,13 +419,42 @@
                     Invoices
                 </li>
             </a>
+            <a th:href="@{/queue}" style="text-decoration: none;" th:if="${user.role?.name() != 'CUSTOMER'}">
+                <li class="nav-item">
+                    <i class="fa-solid fa-list-check"></i>
+                    Queue
+                </li>
+            </a>
+            <a th:href="@{/inventory}" style="text-decoration: none;" th:if="${user.role?.name() == 'COUNTER_STAFF' || user.role?.name() == 'BRANCH_SUPERVISOR' || user.role?.name() == 'ADMIN'}">
+                <li class="nav-item">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    Inventory
+                </li>
+            </a>
+            <a th:href="@{/complaints}" style="text-decoration: none;">
+                <li class="nav-item">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    Complaints
+                </li>
+            </a>
+            <a th:href="@{/reports}" style="text-decoration: none;" th:if="${user.role?.name() == 'BRANCH_SUPERVISOR' || user.role?.name() == 'ADMIN'}">
+                <li class="nav-item">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Reports
+                </li>
+            </a>
+            <a th:href="@{/admin/users/new}" style="text-decoration: none;" th:if="${user.role?.name() == 'ADMIN'}">
+                <li class="nav-item">
+                    <i class="fa-solid fa-user-plus"></i>
+                    Employees
+                </li>
+            </a>
             <a href="#" onclick="toggleDarkMode()" style="text-decoration: none;">
                 <li class="nav-item">
                     <i class="fa-solid fa-moon"></i>
-                    Toggle Dark Mode
+                    Dark Mode
                 </li>
             </a>
-
         </ul>
 
 
