@@ -181,4 +181,30 @@ public class ComplaintController {
         }
         return "redirect:/complaints";
     }
+
+    @PostMapping("/rate/{id}")
+    public String rateComplaint(@PathVariable Long id, @RequestParam Integer rating, HttpSession session, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
+        if (user == null || !"CUSTOMER".equals(user.getRole() != null ? user.getRole().name() : null)) {
+            return "redirect:/login";
+        }
+        
+        java.util.Optional<com.cleantrack.laundry_system.model.Complaint> optComplaint = complaintRepository.findById(id);
+        if (optComplaint.isPresent()) {
+            com.cleantrack.laundry_system.model.Complaint c = optComplaint.get();
+            if (c.getCustomer().getId().equals(user.getId()) && "RESOLVED".equals(c.getStatus()) && c.getSatisfactionRating() == null) {
+                if (rating >= 1 && rating <= 5) {
+                    c.setSatisfactionRating(rating);
+                    complaintRepository.save(c);
+                    auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Complaint ID " + id + " rated " + rating + " stars by customer " + user.getFullName()));
+                    redirectAttributes.addFlashAttribute("success", "Thank you for your feedback!");
+                } else {
+                    redirectAttributes.addFlashAttribute("error", "Invalid rating. Must be between 1 and 5.");
+                }
+            } else {
+                redirectAttributes.addFlashAttribute("error", "You cannot rate this ticket.");
+            }
+        }
+        return "redirect:/complaints";
+    }
 }
