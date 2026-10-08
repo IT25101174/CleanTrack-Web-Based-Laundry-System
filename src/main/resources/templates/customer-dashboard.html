@@ -526,21 +526,21 @@
                         </div>
                     </div>
                     
-                    <div class="tracking-stage" th:classappend="${activeOrder.status == 'WASHING' || activeOrder.status == 'GARMENT INSPECTION' || activeOrder.status == 'IRONING' || activeOrder.status == 'DRYING' || activeOrder.status == 'DRY CLEAN' || activeOrder.status == 'PROCESSING' ? 'active' : ''}" th:style="${activeOrder.status == 'Order Placed' ? 'opacity: 0.4;' : 'opacity: 1;'}">
+                    <div class="tracking-stage" th:classappend="${activeOrder.status == 'RECEIVED' || activeOrder.status == 'WASHING' || activeOrder.status == 'GARMENT INSPECTION' || activeOrder.status == 'IRONING' || activeOrder.status == 'DRYING' || activeOrder.status == 'DRY CLEAN' || activeOrder.status == 'PROCESSING' ? 'active' : ''}" th:style="${activeOrder.status == 'Order Placed' ? 'opacity: 0.4;' : 'opacity: 1;'}">
                         <div class="stage-icon"><i class="fa-solid fa-soap"></i></div>
                         <div class="stage-info">
                             <h5>Processing & Washing</h5>
-                            <p th:text="${activeOrder.status == 'Order Placed' ? 'Pending' : (activeOrder.status == 'READY FOR COLLECTION' ? 'Completed' : 'In Progress')}">Pending</p>
-                            <span class="status-badge status-processing" th:if="${activeOrder.status == 'WASHING' || activeOrder.status == 'GARMENT INSPECTION' || activeOrder.status == 'IRONING' || activeOrder.status == 'DRYING' || activeOrder.status == 'DRY CLEAN' || activeOrder.status == 'PROCESSING'}">Current Stage</span>
+                            <p th:text="${activeOrder.status == 'Order Placed' ? 'Pending' : (activeOrder.status == 'READY FOR COLLECTION' || activeOrder.status == 'Order Completed' ? 'Completed' : 'In Progress')}">Pending</p>
+                            <span class="status-badge status-processing" th:if="${activeOrder.status == 'RECEIVED' || activeOrder.status == 'WASHING' || activeOrder.status == 'GARMENT INSPECTION' || activeOrder.status == 'IRONING' || activeOrder.status == 'DRYING' || activeOrder.status == 'DRY CLEAN' || activeOrder.status == 'PROCESSING'}">Current Stage</span>
                         </div>
                     </div>
                     
-                    <div class="tracking-stage" th:classappend="${activeOrder.status == 'READY FOR COLLECTION' ? 'active' : ''}" th:style="${activeOrder.status == 'READY FOR COLLECTION' ? 'opacity: 1;' : 'opacity: 0.4;'}">
+                    <div class="tracking-stage" th:classappend="${activeOrder.status == 'READY FOR COLLECTION' || activeOrder.status == 'Order Completed' ? 'active' : ''}" th:style="${activeOrder.status == 'READY FOR COLLECTION' || activeOrder.status == 'Order Completed' ? 'opacity: 1;' : 'opacity: 0.4;'}">
                         <div class="stage-icon"><i class="fa-solid fa-check"></i></div>
                         <div class="stage-info">
-                            <h5>Ready for Collection</h5>
-                            <p th:text="${activeOrder.status == 'READY FOR COLLECTION' ? 'Please pickup your items' : 'Pending'}">Pending</p>
-                            <span class="status-badge status-processing" th:if="${activeOrder.status == 'READY FOR COLLECTION'}">Current Stage</span>
+                            <h5>Ready / Completed</h5>
+                            <p th:text="${activeOrder.status == 'READY FOR COLLECTION' ? 'Please pickup your items' : (activeOrder.status == 'Order Completed' ? 'Order Complete' : 'Pending')}">Pending</p>
+                            <span class="status-badge status-processing" th:if="${activeOrder.status == 'READY FOR COLLECTION' || activeOrder.status == 'Order Completed'}">Current Stage</span>
                         </div>
                     </div>
                 </div>
@@ -565,7 +565,9 @@
                             <p style="font-size: 13px; color: var(--text-muted);" th:text="${#temporals.format(invoice.generatedAt, 'MMM d, yyyy')}">Oct 5, 2026</p>
                         </div>
                         <span th:if="${invoice.status == 'PAID'}" style="background: rgba(76, 175, 80, 0.1); color: #4CAF50; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;">PAID</span>
-                        <span th:if="${invoice.status != 'PAID'}" style="background: rgba(255, 152, 0, 0.1); color: #FF9800; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;" th:text="${invoice.status}">PENDING</span>
+                        <span th:if="${invoice.status == 'PENDING_APPROVAL'}" style="background: rgba(255, 152, 0, 0.1); color: #FF9800; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;">WAITING FOR APPROVAL</span>
+                        <span th:if="${invoice.status == 'UNPAID'}" style="background: rgba(239, 68, 68, 0.1); color: #EF4444; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;">UNPAID</span>
+                        <span th:if="${invoice.status != 'PAID' && invoice.status != 'PENDING_APPROVAL' && invoice.status != 'UNPAID'}" style="background: rgba(255, 152, 0, 0.1); color: #FF9800; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;" th:text="${invoice.status}">PENDING</span>
                     </div>
                     
                     <a th:href="@{/invoices}" style="text-decoration:none;">

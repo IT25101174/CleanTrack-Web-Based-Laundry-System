@@ -1,0 +1,401 @@
+import re
+
+# ----------------- LOGIN HTML -----------------
+new_login_html = """<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Secure Login</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #4318FF;
+            --bg-color: #f4f7fe;
+            --text-main: #2b3674;
+            --text-muted: #a3aed1;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+        }
+
+        .card-custom {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .brand-logo {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .input-group-custom {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .input-group-custom i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            z-index: 10;
+        }
+
+        .form-control-custom {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control-custom:focus {
+            background: white;
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(67, 24, 255, 0.1);
+        }
+
+        .btn-primary-custom {
+            background-color: var(--primary);
+            color: white;
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            width: 100%;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-custom:hover {
+            background-color: #3311cc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(67, 24, 255, 0.2);
+        }
+
+        .alert-custom {
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+        }
+
+        .alert-custom-danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #ef4444;
+        }
+
+        .alert-custom-success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #22c55e;
+        }
+
+        .redirect-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .redirect-link:hover {
+            color: #3311cc;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="card-custom">
+            <a href="index.html" th:href="@{/}" class="text-decoration-none"><h1 class="brand-logo"><i class="fa-solid fa-droplet me-2"></i>CleanTrack</h1></a>
+            <p class="text-center text-muted mb-4">Welcome back! Please enter your details.</p>
+
+            <!-- Alerts for Registration/Logout/Errors -->
+            <div th:if="${error}" class="alert alert-custom alert-custom-danger">
+                <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${error}">Error details</span>
+            </div>
+            
+            <div th:if="${param.registered}" class="alert alert-custom alert-custom-success">
+                <i class="fa-solid fa-circle-check me-2"></i>Registration successful! Please log in.
+            </div>
+
+            <div th:if="${param.logout}" class="alert alert-custom alert-custom-success">
+                <i class="fa-solid fa-right-from-bracket me-2"></i>You have been logged out.
+            </div>
+
+            <!-- Login Form -->
+            <form th:action="@{/login}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <div class="input-group-custom">
+                        <input type="text" name="username" class="form-control-custom" placeholder="Enter your username" required autofocus>
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Password</label>
+                    <div class="input-group-custom">
+                        <input type="password" name="password" class="form-control-custom" placeholder="Enter your password" required>
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary-custom mb-4">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="text-center">
+                <p class="text-muted small mb-0">Don't have an account? <a href="register.html" th:href="@{/register}" class="redirect-link">Sign up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>"""
+
+# ----------------- REGISTER HTML -----------------
+new_register_html = """<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Create Account</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #4318FF;
+            --bg-color: #f4f7fe;
+            --text-main: #2b3674;
+            --text-muted: #a3aed1;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+        }
+
+        .register-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        .card-custom {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .brand-logo {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .input-group-custom {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group-custom i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            z-index: 10;
+        }
+
+        .form-control-custom {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control-custom:focus {
+            background: white;
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(67, 24, 255, 0.1);
+        }
+
+        .btn-primary-custom {
+            background-color: var(--primary);
+            color: white;
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            width: 100%;
+            border: none;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-primary-custom:hover {
+            background-color: #3311cc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(67, 24, 255, 0.2);
+        }
+
+        .alert-custom {
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+        }
+
+        .alert-custom-danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #ef4444;
+        }
+
+        .redirect-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .redirect-link:hover {
+            color: #3311cc;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="register-container">
+        <div class="card-custom">
+            <a href="index.html" th:href="@{/}" class="text-decoration-none"><h1 class="brand-logo"><i class="fa-solid fa-droplet me-2"></i>CleanTrack</h1></a>
+            <p class="text-center text-muted mb-4">Create your account to track your orders.</p>
+
+            <div th:if="${error}" class="alert alert-custom alert-custom-danger">
+                <i class="fa-solid fa-circle-exclamation me-2"></i><span th:text="${error}">Error details</span>
+            </div>
+
+            <!-- Registration Form -->
+            <form th:action="@{/register}" method="POST" th:object="${user}">
+                
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <div class="input-group-custom">
+                        <input type="text" th:field="*{username}" class="form-control-custom" placeholder="Choose a username" required autofocus>
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Full Name</label>
+                    <div class="input-group-custom">
+                        <input type="text" th:field="*{fullName}" class="form-control-custom" placeholder="Enter your full name" required>
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <div class="input-group-custom">
+                        <input type="password" th:field="*{password}" class="form-control-custom" placeholder="Create a password" required>
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary-custom mb-4">
+                    Create Account
+                </button>
+            </form>
+
+            <div class="text-center">
+                <p class="text-muted small mb-0">Already have an account? <a href="login.html" th:href="@{/login}" class="redirect-link">Sign In</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>"""
+
+with open('src/main/resources/templates/login.html', 'w', encoding='utf-8') as f:
+    f.write(new_login_html)
+    
+with open('src/main/resources/templates/register.html', 'w', encoding='utf-8') as f:
+    f.write(new_register_html)
+
+print('Updated login and register pages successfully!')
