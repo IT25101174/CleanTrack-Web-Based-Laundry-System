@@ -407,6 +407,30 @@
     .stat-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid rgba(0, 0, 0, 0.05); }
     .stat-item:last-child { border-bottom: none; }
 
+
+    /* Print Styles for tidy PDF export */
+    @media print {
+        body { background: white !important; color: black !important; }
+        .sidebar { display: none !important; }
+        .header { display: none !important; }
+        .btn, button, form, a[href^="/"] { display: none !important; }
+        .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+        .dashboard-container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+        .card, .kpi-card { 
+            box-shadow: none !important; 
+            border: 1px solid #ddd !important; 
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        /* Make sure backgrounds print */
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .row { display: flex !important; flex-wrap: wrap !important; }
+        .col-md-3 { width: 25% !important; flex: 0 0 25% !important; }
+        .col-lg-6 { width: 50% !important; flex: 0 0 50% !important; }
+        /* Give canvas a fixed size for printing so Chart.js doesn't collapse */
+        canvas { max-height: 300px !important; }
+    }
+
 </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -508,7 +532,7 @@
                 <p class="text-muted">High-level executive summary of laundry operations, finances, and system audit
                     logs.</p>
             </div>
-            <button onclick="window.print()" class="btn btn-outline-light btn-print px-4 py-2">
+            <button onclick="window.print()" class="btn btn-outline-danger btn-print px-4 py-2">
                 <i class="fa-solid fa-file-pdf me-2 text-danger"></i>Export PDF
             </button>
         </div>
