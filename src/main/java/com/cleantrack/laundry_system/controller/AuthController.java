@@ -171,6 +171,11 @@ public class AuthController {
             return "redirect:/login";
         }
         model.addAttribute("user", user);
+        
+        if (user.getRole() != null && "CUSTOMER".equals(user.getRole().name())) {
+            return "redirect:/customer-dashboard";
+        }
+        
         return "dashboard";
     }
 }
