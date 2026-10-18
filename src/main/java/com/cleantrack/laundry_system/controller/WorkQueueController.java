@@ -39,7 +39,9 @@ public class WorkQueueController {
 
         for (com.cleantrack.laundry_system.model.Order o : allOrders) {
             // "COMPLETED" = removed from the queue; "Order Completed" stays visible until it is deleted manually
-            if ("COMPLETED".equals(o.getStatus()) || "Cancelled".equals(o.getStatus())) {
+            // Orders still waiting for their payment to be approved stay out of the queue
+            if ("COMPLETED".equals(o.getStatus()) || "Cancelled".equals(o.getStatus())
+                    || "AWAITING_PAYMENT".equals(o.getStatus())) {
                 continue;
             }
             if (stageFilter != null && !stageFilter.equals(o.getStatus())) {
@@ -214,15 +216,27 @@ public class WorkQueueController {
 
     @org.springframework.web.bind.annotation.GetMapping("/queue/{id}/history")
     @org.springframework.web.bind.annotation.ResponseBody
-    public java.util.List<java.util.Map<String, String>> getHistory(@org.springframework.web.bind.annotation.PathVariable Long id) {
+    public java.util.List<java.util.Map<String, String>> getHistory(@org.springframework.web.bind.annotation.PathVariable Long id, jakarta.servlet.http.HttpSession session) {
+        // Staff can read any order's history. A customer can only read the history of their own orders.
+        com.cleantrack.laundry_system.model.User user = (com.cleantrack.laundry_system.model.User) session.getAttribute("user");
+        if (user == null || user.getRole() == null) {
+            return new java.util.ArrayList<>();
+        }
+        if ("CUSTOMER".equals(user.getRole().name())) {
+            java.util.Optional<com.cleantrack.laundry_system.model.Order> ownOrder = orderRepository.findById(id);
+            if (ownOrder.isEmpty() || ownOrder.get().getCustomer() == null
+                    || !user.getId().equals(ownOrder.get().getCustomer().getId())) {
+                return new java.util.ArrayList<>();
+            }
+        }
         java.util.List<com.cleantrack.laundry_system.model.StatusUpdate> updates = statusUpdateRepository.findByOrderIdOrderByChangedAtDesc(id);
         java.util.List<java.util.Map<String, String>> historyList = new java.util.ArrayList<>();
         
         for (com.cleantrack.laundry_system.model.StatusUpdate u : updates) {
             java.util.Map<String, String> map = new java.util.HashMap<>();
             map.put("stage", u.getStage());
-            map.put("updatedBy", u.getUpdatedBy().getFullName());
-            map.put("date", u.getChangedAt().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")));
+            map.put("updatedBy", u.getUpdatedBy() != null ? u.getUpdatedBy().getFullName() : "Unknown");
+            map.put("date", u.getChangedAt() == null ? "" : u.getChangedAt().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")));
             historyList.add(map);
         }
         return historyList;

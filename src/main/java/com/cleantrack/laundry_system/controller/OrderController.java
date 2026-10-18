@@ -47,7 +47,23 @@ public class OrderController {
             orders = orderRepository.findAll();
         }
 
+        // Orders whose payment is already made (PAID) or waiting for approval (PENDING_APPROVAL) cannot be edited
+        java.util.Set<Long> paidOrderIds = new java.util.HashSet<>();
+        java.util.Set<Long> paymentSubmittedOrderIds = new java.util.HashSet<>();
+        for (Order o : orders) {
+            for (com.cleantrack.laundry_system.model.Invoice invoice : invoiceRepository.findByOrderId(o.getId())) {
+                if ("PAID".equals(invoice.getStatus())) {
+                    paidOrderIds.add(o.getId());
+                    paymentSubmittedOrderIds.add(o.getId());
+                } else if ("PENDING_APPROVAL".equals(invoice.getStatus())) {
+                    paymentSubmittedOrderIds.add(o.getId());
+                }
+            }
+        }
+
         model.addAttribute("orders", orders);
+        model.addAttribute("paidOrderIds", paidOrderIds);
+        model.addAttribute("paymentSubmittedOrderIds", paymentSubmittedOrderIds);
         model.addAttribute("user", user);
         return "order-list";
     }
@@ -75,10 +91,28 @@ public class OrderController {
         // Basic validation
         if (order.getItemDescription() == null || order.getItemDescription().isEmpty() ||
                 order.getQuantity() == null || order.getQuantity() <= 0 ||
-                order.getServiceType() == null || order.getServiceType().isEmpty() ||
+                !isKnownService(order.getServiceType()) ||
                 paymentMethod == null || paymentMethod.isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Please fill all required fields correctly.");
             return "redirect:/orders/new";
+        }
+
+        // Never trust an id sent from the form: it could overwrite an existing order
+        order.setId(null);
+
+        // For a bank transfer the receipt is checked and stored first, so a failure leaves no half-created order
+        String receiptPath = null;
+        if ("BANK_TRANSFER".equals(paymentMethod)) {
+            if (bankReceipt == null || bankReceipt.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Bank receipt is required for Bank Transfer.");
+                return "redirect:/orders/new";
+            }
+            receiptPath = storeReceipt(bankReceipt);
+            if (receiptPath == null) {
+                redirectAttributes.addFlashAttribute("error",
+                        "Could not upload the receipt. Please upload a PDF or an image (PNG, JPG, GIF or WEBP).");
+                return "redirect:/orders/new";
+            }
         }
 
         order.setTrackingId("CT-" + System.currentTimeMillis());
@@ -122,26 +156,7 @@ public class OrderController {
             // Workflow fix: Keep order out of queue until payment is approved
             savedOrder.setStatus("AWAITING_PAYMENT");
             orderRepository.save(savedOrder);
-
-            // Handle file upload
-            if (bankReceipt != null && !bankReceipt.isEmpty()) {
-                try {
-                    String fileName = System.currentTimeMillis() + "_" + bankReceipt.getOriginalFilename();
-                    java.nio.file.Path uploadPath = java.nio.file.Paths.get("src/main/resources/static/uploads/");
-                    if (!java.nio.file.Files.exists(uploadPath)) {
-                        java.nio.file.Files.createDirectories(uploadPath);
-                    }
-                    java.nio.file.Files.copy(bankReceipt.getInputStream(), uploadPath.resolve(fileName),
-                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                    invoice.setReceiptPath("/uploads/" + fileName);
-                } catch (java.io.IOException e) {
-                    redirectAttributes.addFlashAttribute("error", "Failed to upload bank receipt.");
-                    return "redirect:/orders/new";
-                }
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Bank receipt is required for Bank Transfer.");
-                return "redirect:/orders/new";
-            }
+            invoice.setReceiptPath(receiptPath);
         }
 
         // Save the generated invoice
@@ -167,8 +182,19 @@ public class OrderController {
         }
         Order order = orderOpt.get();
 
+        if (!canAccess(user, order)) {
+            redirectAttributes.addFlashAttribute("error", "You can only change your own orders.");
+            return "redirect:/orders";
+        }
+
         if (isProcessingOrBeyond(order.getStatus())) {
             redirectAttributes.addFlashAttribute("error", "Order cannot be edited once it has entered processing.");
+            return "redirect:/orders";
+        }
+
+        if (isPaymentSubmitted(order.getId())) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Payment has already been made for this order, so it can no longer be edited.");
             return "redirect:/orders";
         }
 
@@ -190,17 +216,49 @@ public class OrderController {
         }
         Order existingOrder = orderOpt.get();
 
+        if (!canAccess(user, existingOrder)) {
+            redirectAttributes.addFlashAttribute("error", "You can only change your own orders.");
+            return "redirect:/orders";
+        }
+
         if (isProcessingOrBeyond(existingOrder.getStatus())) {
             redirectAttributes.addFlashAttribute("error", "Order cannot be edited once it has entered processing.");
             return "redirect:/orders";
         }
 
+        if (updatedOrder.getItemDescription() == null || updatedOrder.getItemDescription().trim().isEmpty()
+                || updatedOrder.getQuantity() == null || updatedOrder.getQuantity() <= 0
+                || !isKnownService(updatedOrder.getServiceType())) {
+            redirectAttributes.addFlashAttribute("error", "Please fill all required fields correctly.");
+            return "redirect:/orders/" + id + "/edit";
+        }
+
+        // Once the customer has paid (or uploaded a bank receipt), the price cannot change
+        if (isPaymentSubmitted(id)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Payment has already been made for this order, so it can no longer be edited.");
+            return "redirect:/orders";
+        }
+        java.util.List<com.cleantrack.laundry_system.model.Invoice> invoices = invoiceRepository.findByOrderId(id);
+
         // Update allowed fields
-        existingOrder.setItemDescription(updatedOrder.getItemDescription());
+        existingOrder.setItemDescription(updatedOrder.getItemDescription().trim());
         existingOrder.setQuantity(updatedOrder.getQuantity());
         existingOrder.setServiceType(updatedOrder.getServiceType());
-
         orderRepository.save(existingOrder);
+
+        // Keep the invoice in step with the new items and service
+        for (com.cleantrack.laundry_system.model.Invoice invoice : invoices) {
+            java.math.BigDecimal subtotal = priceFor(existingOrder.getServiceType())
+                    .multiply(new java.math.BigDecimal(existingOrder.getQuantity()));
+            java.math.BigDecimal tax = subtotal.multiply(new java.math.BigDecimal("0.10"))
+                    .setScale(2, java.math.RoundingMode.HALF_UP);
+            invoice.setSubtotal(subtotal);
+            invoice.setTaxAmount(tax);
+            invoice.setTotalAmount(subtotal.add(tax));
+            invoiceRepository.save(invoice);
+        }
+
         auditLogRepository.save(new com.cleantrack.laundry_system.model.AuditLog("Order updated: " + existingOrder.getTrackingId() + " by " + user.getFullName()));
         redirectAttributes.addFlashAttribute("success", "Order updated successfully!");
 
@@ -219,9 +277,22 @@ public class OrderController {
         }
         Order order = orderOpt.get();
 
+        if (!canAccess(user, order)) {
+            redirectAttributes.addFlashAttribute("error", "You can only change your own orders.");
+            return "redirect:/orders";
+        }
+
         if (isProcessingOrBeyond(order.getStatus())) {
             redirectAttributes.addFlashAttribute("error", "Order cannot be cancelled once it has entered processing.");
             return "redirect:/orders";
+        }
+
+        for (com.cleantrack.laundry_system.model.Invoice invoice : invoiceRepository.findByOrderId(id)) {
+            if ("PAID".equals(invoice.getStatus())) {
+                redirectAttributes.addFlashAttribute("error",
+                        "This order is already paid. Please contact the branch to cancel it.");
+                return "redirect:/orders";
+            }
         }
 
         order.setStatus("Cancelled");
@@ -232,17 +303,66 @@ public class OrderController {
         return "redirect:/orders";
     }
 
+    // An order can only be edited or cancelled while it is waiting: a new order, or one waiting for its payment
+    // to be approved. Anything else (processing stages, completed, cancelled) is locked.
     private boolean isProcessingOrBeyond(String status) {
         if (status == null)
             return false;
-        // Assume anything other than "Order Placed" or "PENDING" is processing or
-        // beyond.
-        // Or explicitly check for "WASHING", "DRYING", "IRONING", "READY FOR
-        // COLLECTION", "COMPLETED"
-        return status.equalsIgnoreCase("WASHING") ||
-                status.equalsIgnoreCase("DRYING") ||
-                status.equalsIgnoreCase("IRONING") ||
-                status.equalsIgnoreCase("READY FOR COLLECTION") ||
-                status.equalsIgnoreCase("COMPLETED");
+        return !(status.equalsIgnoreCase("Order Placed") || status.equalsIgnoreCase("AWAITING_PAYMENT"));
+    }
+
+    // True when the order's invoice is paid or its bank transfer is waiting for approval
+    private boolean isPaymentSubmitted(Long orderId) {
+        for (com.cleantrack.laundry_system.model.Invoice invoice : invoiceRepository.findByOrderId(orderId)) {
+            if ("PAID".equals(invoice.getStatus()) || "PENDING_APPROVAL".equals(invoice.getStatus())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // A customer may only change their own orders. Staff can change any order.
+    private boolean canAccess(User user, Order order) {
+        if (user.getRole() == null || !"CUSTOMER".equals(user.getRole().name())) {
+            return true;
+        }
+        return order.getCustomer() != null && order.getCustomer().getId() != null
+                && order.getCustomer().getId().equals(user.getId());
+    }
+
+    private boolean isKnownService(String serviceType) {
+        return "WASH_ONLY".equals(serviceType) || "WASH_IRON".equals(serviceType) || "DRY_CLEAN".equals(serviceType);
+    }
+
+    private java.math.BigDecimal priceFor(String serviceType) {
+        if ("WASH_IRON".equals(serviceType))
+            return new java.math.BigDecimal("800.00");
+        if ("DRY_CLEAN".equals(serviceType))
+            return new java.math.BigDecimal("1200.00");
+        return new java.math.BigDecimal("500.00");
+    }
+
+    // Saves a bank receipt in the "uploads" folder (served at /uploads/...). Only PDF and image files are accepted
+    // and the stored name is cleaned, so a crafted file name cannot write outside the folder.
+    // Returns the web path of the stored file, or null when the file is not accepted.
+    private String storeReceipt(org.springframework.web.multipart.MultipartFile file) {
+        String original = file.getOriginalFilename() == null ? "" : file.getOriginalFilename();
+        int slash = Math.max(original.lastIndexOf('/'), original.lastIndexOf('\\'));
+        String baseName = original.substring(slash + 1).replaceAll("[^A-Za-z0-9._-]", "_");
+        int dot = baseName.lastIndexOf('.');
+        String extension = dot < 0 ? "" : baseName.substring(dot + 1).toLowerCase();
+        if (!java.util.List.of("pdf", "png", "jpg", "jpeg", "gif", "webp").contains(extension)) {
+            return null;
+        }
+        try {
+            java.nio.file.Path uploadDir = java.nio.file.Paths.get("uploads");
+            java.nio.file.Files.createDirectories(uploadDir);
+            String storedName = System.currentTimeMillis() + "_" + baseName;
+            java.nio.file.Files.copy(file.getInputStream(), uploadDir.resolve(storedName),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            return "/uploads/" + storedName;
+        } catch (java.io.IOException e) {
+            return null;
+        }
     }
 }

@@ -10,5 +10,6 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
+    boolean existsByRole(com.cleantrack.laundry_system.model.Role role);
     java.util.List<User> findByRoleNot(com.cleantrack.laundry_system.model.Role role);
 }

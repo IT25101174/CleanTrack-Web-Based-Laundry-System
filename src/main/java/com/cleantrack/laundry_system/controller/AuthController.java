@@ -3,6 +3,7 @@ package com.cleantrack.laundry_system.controller;
 import com.cleantrack.laundry_system.model.Role;
 import com.cleantrack.laundry_system.model.User;
 import com.cleantrack.laundry_system.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,13 +42,16 @@ public class AuthController {
     @PostMapping("/login")
     public String login(@RequestParam String username,
                         @RequestParam String password,
+                        HttpServletRequest request,
                         HttpSession session,
                         Model model) {
-        Optional<User> userOpt = userRepository.findByUsername(username);
+        Optional<User> userOpt = userRepository.findByUsername(username == null ? "" : username.trim());
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             // Validate password using BCrypt
             if (BCrypt.checkpw(password, user.getPassword())) {
+                // A fresh session id after sign in prevents session fixation
+                request.changeSessionId();
                 session.setAttribute("user", user);
                 session.setAttribute("role", user.getRole().name()); // Store role name in session if needed
                 return "redirect:/dashboard";
@@ -68,51 +72,77 @@ public class AuthController {
 
     @PostMapping("/register")
     public String register(@ModelAttribute User user, Model model) {
-        // Basic inline validations
-        if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
-            model.addAttribute("error", "Username is required.");
-            return "register";
-        }
-        if (user.getPassword() == null || user.getPassword().length() < 6) {
-            model.addAttribute("error", "Password must be at least 6 characters long.");
-            return "register";
-        }
-        if (user.getEmail() == null || !user.getEmail().contains("@")) {
-            model.addAttribute("error", "Please provide a valid email address.");
-            return "register";
-        }
-        if (user.getPhone() == null || user.getPhone().trim().isEmpty()) {
-            model.addAttribute("error", "Phone number is required.");
-            return "register";
-        }
-        if (user.getFullName() == null || user.getFullName().trim().isEmpty()) {
-            model.addAttribute("error", "Full name is required.");
-            return "register";
-        }
-        
+        // Never trust an id sent from the form: it could overwrite an existing account
+        user.setId(null);
+        trimUserFields(user);
 
-        // Check for existing username
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            model.addAttribute("error", "Username already exists.");
-            return "register";
-        }
-
-        // Check for existing email
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            model.addAttribute("error", "Email is already registered.");
-            return "register";
+        String problem = validateNewUser(user, true);
+        if (problem != null) {
+            return registerError(user, model, problem, "register");
         }
 
         // Secure password with BCrypt
-        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
-        user.setPassword(hashedPassword);
+        user.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt()));
         user.setRole(Role.CUSTOMER);
-        
         userRepository.save(user);
 
         return "redirect:/login?registered=true";
     }
 
+    // Common checks for the customer, employee and first-admin forms. Returns the first problem or null.
+    private String validateNewUser(User user, boolean phoneRequired) {
+        if (user.getUsername() == null || user.getUsername().isEmpty()) {
+            return "Username is required.";
+        }
+        if (user.getUsername().length() > 50) {
+            return "Username cannot be longer than 50 characters.";
+        }
+        if (user.getPassword() == null || user.getPassword().length() < 6) {
+            return "Password must be at least 6 characters long.";
+        }
+        if (user.getEmail() == null || !user.getEmail().matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+            return "Please provide a valid email address.";
+        }
+        if (user.getFullName() == null || user.getFullName().isEmpty()) {
+            return "Full name is required.";
+        }
+        if (phoneRequired && (user.getPhone() == null || user.getPhone().isEmpty())) {
+            return "Phone number is required.";
+        }
+        if (user.getPhone() != null && user.getPhone().length() > 20) {
+            return "Phone number cannot be longer than 20 characters.";
+        }
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            return "Username already exists.";
+        }
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            return "Email is already registered.";
+        }
+        return null;
+    }
+
+    private void trimUserFields(User user) {
+        user.setUsername(trimOrNull(user.getUsername()));
+        user.setEmail(trimOrNull(user.getEmail()));
+        user.setFullName(trimOrNull(user.getFullName()));
+        user.setPhone(trimOrNull(user.getPhone()));
+        user.setAddress(trimOrNull(user.getAddress()));
+    }
+
+    private String trimOrNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    // Shows the form again with the message. The password is never sent back to the browser.
+    private String registerError(User user, Model model, String message, String view) {
+        user.setPassword(null);
+        model.addAttribute("error", message);
+        return view;
+    }
 
     @GetMapping("/admin/users/new")
     public String showAdminRegistrationForm(HttpSession session, Model model) {
@@ -131,28 +161,18 @@ public class AuthController {
             return "redirect:/login";
         }
 
-        // Basic validations
-        if (user.getUsername() == null || user.getUsername().trim().isEmpty() ||
-            user.getPassword() == null || user.getPassword().length() < 6 ||
-            user.getEmail() == null || !user.getEmail().contains("@") ||
-            user.getFullName() == null || user.getFullName().trim().isEmpty() ||
-            user.getRole() == null) {
-            model.addAttribute("error", "Please fill all required fields correctly.");
-            return "admin-create-user";
+        user.setId(null);
+        trimUserFields(user);
+
+        if (user.getRole() == null || user.getRole() == Role.CUSTOMER) {
+            return registerError(user, model, "Please choose an employee role.", "admin-create-user");
+        }
+        String problem = validateNewUser(user, true);
+        if (problem != null) {
+            return registerError(user, model, problem, "admin-create-user");
         }
 
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            model.addAttribute("error", "Username already exists.");
-            return "admin-create-user";
-        }
-
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            model.addAttribute("error", "Email is already registered.");
-            return "admin-create-user";
-        }
-
-        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
-        user.setPassword(hashedPassword);
+        user.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt()));
         userRepository.save(user);
 
         return "redirect:/dashboard";
@@ -179,30 +199,33 @@ public class AuthController {
         return "dashboard";
     }
     
+    // First-time setup page. It only works while the system has no administrator,
+    // so it cannot be used later to create more admin accounts without signing in.
     @GetMapping("/secret-admin-setup-99")
     public String showSecretAdminRegistrationForm(Model model) {
+        if (userRepository.existsByRole(Role.ADMIN)) {
+            return "redirect:/login";
+        }
         model.addAttribute("user", new User());
         return "secret-admin-register";
     }
 
     @PostMapping("/secret-admin-setup-99")
     public String secretRegisterAdmin(@ModelAttribute User user, Model model) {
-        if (user.getUsername() == null || user.getUsername().trim().isEmpty() ||
-            user.getPassword() == null || user.getPassword().length() < 6 ||
-            user.getEmail() == null || !user.getEmail().contains("@") ||
-            user.getFullName() == null || user.getFullName().trim().isEmpty()) {
-            model.addAttribute("error", "Please fill all required fields correctly.");
-            return "secret-admin-register";
+        if (userRepository.existsByRole(Role.ADMIN)) {
+            return "redirect:/login";
         }
 
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            model.addAttribute("error", "Username already exists.");
-            return "secret-admin-register";
+        user.setId(null);
+        trimUserFields(user);
+
+        String problem = validateNewUser(user, true);
+        if (problem != null) {
+            return registerError(user, model, problem, "secret-admin-register");
         }
 
         user.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt()));
         user.setRole(Role.ADMIN);
-        
         userRepository.save(user);
 
         return "redirect:/login?registered=true";
