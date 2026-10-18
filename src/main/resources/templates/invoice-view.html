@@ -63,10 +63,10 @@
                     Reports
                 </li>
             </a>
-            <a th:href="@{/admin/users/new}" style="text-decoration: none;" th:if="${user.role?.name() == 'ADMIN'}">
+            <a th:href="@{/admin/users}" style="text-decoration: none;" th:if="${user.role?.name() == 'ADMIN'}">
                 <li class="nav-item">
-                    <i class="fa-solid fa-user-plus"></i>
-                    Employees
+                    <i class="fa-solid fa-users"></i>
+                    Users
                 </li>
             </a>
             <a href="#" onclick="toggleDarkMode()" style="text-decoration: none;">
@@ -99,7 +99,7 @@
 
         <!-- Alerts -->
         <div th:if="${param.error}" class="alert alert-danger border-0 mb-4"
-            style="background: rgba(239, 68, 68, 0.2); color: #fca5a5;">
+            style="background: rgba(239, 68, 68, 0.2); color: #b91c1c;">
             <i class="fa-solid fa-circle-exclamation me-2"></i>
             <span th:if="${param.error[0] == 'InvoiceAlreadyExists'}">An invoice has already been generated for this
                 Order ID.</span>

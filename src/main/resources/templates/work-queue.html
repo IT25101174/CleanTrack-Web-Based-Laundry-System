@@ -68,10 +68,10 @@
                     Reports
                 </li>
             </a>
-            <a th:href="@{/admin/users/new}" style="text-decoration: none;" th:if="${user.role?.name() == 'ADMIN'}">
+            <a th:href="@{/admin/users}" style="text-decoration: none;" th:if="${user.role?.name() == 'ADMIN'}">
                 <li class="nav-item">
-                    <i class="fa-solid fa-user-plus"></i>
-                    Employees
+                    <i class="fa-solid fa-users"></i>
+                    Users
                 </li>
             </a>
             <a href="#" onclick="toggleDarkMode()" style="text-decoration: none;">
@@ -101,17 +101,12 @@
         </header>
 
 <div style="padding: 30px;">
-<div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2>Operational Workflow Queue</h2>
-                <p class="text-muted">Manage laundry processing stages and order progression.</p>
-            </div>
-            
-            <div class="d-flex align-items-center gap-2">
+<div class="d-flex align-items-center mb-4">
+            <div class="d-flex flex-wrap align-items-center gap-2">
                 <!-- Search by Tracking ID -->
                 <form th:action="@{/queue}" method="GET" class="d-flex gap-2">
                     <input type="hidden" name="stage" th:if="${selectedStage != null}" th:value="${selectedStage}">
-                    <input type="text" name="search" class="form-control" placeholder="Search Tracking ID" th:value="${searchTerm}"
+                    <input type="text" name="search" class="form-control" style="min-width: 220px;" placeholder="Search Tracking ID" th:value="${searchTerm}"
                            >
                     <button type="submit" class="btn btn-outline-primary" title="Search"
                             >
@@ -147,13 +142,13 @@
         </div>
 
         <!-- Alerts -->
-        <div th:if="${success}" class="alert alert-success" role="alert" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399;">
+        <div th:if="${success}" class="alert alert-success" role="alert" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #047857;">
             <i class="fa-solid fa-circle-check me-2"></i><span th:text="${success}"></span>
         </div>
-        <div th:if="${incorrectTrackingId}" class="alert alert-danger" role="alert" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;">
+        <div th:if="${incorrectTrackingId}" class="alert alert-danger" role="alert" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #b91c1c;">
             <i class="fa-solid fa-triangle-exclamation me-2"></i><span>Incorrect Tracking ID</span>
         </div>
-        <div th:if="${error}" class="alert alert-danger" role="alert" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171;">
+        <div th:if="${error}" class="alert alert-danger" role="alert" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #b91c1c;">
             <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
         </div>
         

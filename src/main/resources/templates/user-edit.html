@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Edit Account</title>
+    <th:block th:replace="~{fragments/layout :: head-links}"></th:block>
+</head>
+<body>
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+
+    <aside th:replace="~{fragments/layout :: sidebar('users')}"></aside>
+
+    <main class="main-content">
+        <header th:replace="~{fragments/layout :: topbar('Edit Account', 'Update the details, role or password of this account.')}"></header>
+
+        <div class="page-body narrow">
+            <div class="page-card">
+                <div class="text-center">
+                    <div class="icon-circle"><i class="fa-solid fa-user-gear"></i></div>
+                    <h3 class="mb-1" th:text="${target.username}">username</h3>
+                    <p class="text-muted mb-4">The username cannot be changed.</p>
+                </div>
+
+                <div th:if="${error}" class="alert alert-danger" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
+                </div>
+
+                <form th:action="@{/admin/users/{id}/edit(id=${target.id})}" method="post" autocomplete="off">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
+                            <input type="text" class="form-control" name="fullName" th:value="${target.fullName}" maxlength="100" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
+                            <input type="email" class="form-control" name="email" th:value="${target.email}" maxlength="100" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
+                            <input type="tel" class="form-control" name="phone" th:value="${target.phone}" maxlength="20" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Address (optional)</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-location-dot"></i></span>
+                            <input type="text" class="form-control" name="address" th:value="${target.address}" maxlength="255">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-user-shield"></i></span>
+                            <select class="form-select" name="role" th:disabled="${editingSelf}" required>
+                                <option th:each="r : ${roles}" th:value="${r.name()}"
+                                        th:selected="${r == target.role}"
+                                        th:text="${#strings.capitalizeWords(#strings.toLowerCase(r.name()).replace('_', ' '))}">Role</option>
+                            </select>
+                        </div>
+                        <div class="form-text" th:if="${editingSelf}">You cannot change the role of your own account.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">New Password (optional)</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+                            <input type="password" class="form-control" name="newPassword" minlength="6"
+                                   placeholder="Leave empty to keep the current password" autocomplete="new-password">
+                        </div>
+                        <div class="form-text">Use at least 6 characters. Enter a value only if the user has forgotten their password.</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary-custom flex-fill">
+                            <i class="fa-solid fa-floppy-disk me-2"></i>Save Changes
+                        </button>
+                        <a th:href="@{/admin/users}" class="btn btn-outline-custom">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:replace="~{fragments/layout :: darkmode}"></script>
+</body>
+</html>

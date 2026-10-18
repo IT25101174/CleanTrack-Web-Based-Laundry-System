@@ -63,10 +63,10 @@
                     Reports
                 </li>
             </a>
-            <a th:href="@{/admin/users/new}" style="text-decoration: none;" th:if="${user.role?.name() == 'ADMIN'}">
+            <a th:href="@{/admin/users}" style="text-decoration: none;" th:if="${user.role?.name() == 'ADMIN'}">
                 <li class="nav-item">
-                    <i class="fa-solid fa-user-plus"></i>
-                    Employees
+                    <i class="fa-solid fa-users"></i>
+                    Users
                 </li>
             </a>
             <a href="#" onclick="toggleDarkMode()" style="text-decoration: none;">
@@ -109,10 +109,10 @@
             </div>
         </div>
 
-        <div th:if="${success}" class="alert alert-success" style="background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2);">
+        <div th:if="${success}" class="alert alert-success" style="background: rgba(16, 185, 129, 0.1); color: #047857; border: 1px solid rgba(16, 185, 129, 0.2);">
             <i class="fa-solid fa-circle-check me-2"></i><span th:text="${success}"></span>
         </div>
-        <div th:if="${error}" class="alert alert-danger" style="background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2);">
+        <div th:if="${error}" class="alert alert-danger" style="background: rgba(239, 68, 68, 0.1); color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.2);">
             <i class="fa-solid fa-triangle-exclamation me-2"></i><span th:text="${error}"></span>
         </div>
 

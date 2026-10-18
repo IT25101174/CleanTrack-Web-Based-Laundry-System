@@ -3,7 +3,7 @@
     --primary: #4318FF;
     --secondary: #E9E3FF;
     --text-main: #2B3674;
-    --text-muted: #A3AED0;
+    --text-muted: #6B7699;
     --card-bg: rgba(255, 255, 255, 0.85);
     --gradient: linear-gradient(135deg, #868CFF 0%, #4318FF 100%);
 }
@@ -169,6 +169,11 @@ body {
 }
 
 .welcome-text p {
+    color: #4A5578;
+    font-weight: 500;
+}
+
+body.dark-theme .welcome-text p {
     color: var(--text-muted);
 }
 
@@ -845,4 +850,38 @@ select.form-control-custom {
     .table {
         font-size: 14px;
     }
+}
+
+/* Role badges on the user accounts page */
+.role-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    background: rgba(107, 118, 153, 0.15);
+    color: #4A5578;
+}
+.role-badge[data-role="ADMIN"] { background: rgba(220, 38, 38, 0.12); color: #b91c1c; }
+.role-badge[data-role="SHOP_OWNER"] { background: rgba(217, 119, 6, 0.14); color: #b45309; }
+.role-badge[data-role="BRANCH_SUPERVISOR"] { background: rgba(67, 24, 255, 0.10); color: #4318FF; }
+.role-badge[data-role="COUNTER_STAFF"] { background: rgba(8, 145, 178, 0.12); color: #0e7490; }
+.role-badge[data-role="LAUNDRY_STAFF"] { background: rgba(5, 150, 105, 0.12); color: #047857; }
+.role-badge[data-role="CUSTOMER"] { background: rgba(107, 118, 153, 0.15); color: #4A5578; }
+.avatar { flex-shrink: 0; }
+
+/* The accounts table scrolls inside its card instead of squeezing the columns */
+.user-table { min-width: 860px; }
+
+/* Invoice status badges */
+.badge-paid {
+    background: rgba(16, 185, 129, 0.12);
+    color: #047857 !important;
+    border: 1px solid #10b981;
+}
+.badge-unpaid {
+    background: rgba(239, 68, 68, 0.10);
+    color: #b91c1c !important;
+    border: 1px solid #ef4444;
 }

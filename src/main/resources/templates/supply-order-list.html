@@ -64,10 +64,10 @@
                     Reports
                 </li>
             </a>
-            <a th:href="@{/admin/users/new}" style="text-decoration: none;" th:if="${user.role?.name() == 'ADMIN'}">
+            <a th:href="@{/admin/users}" style="text-decoration: none;" th:if="${user.role?.name() == 'ADMIN'}">
                 <li class="nav-item">
-                    <i class="fa-solid fa-user-plus"></i>
-                    Employees
+                    <i class="fa-solid fa-users"></i>
+                    Users
                 </li>
             </a>
             <a href="#" onclick="toggleDarkMode()" style="text-decoration: none;">
@@ -128,7 +128,7 @@
     </div>
 
     
-        <button th:if="${canManage}" type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#createOrderModal">
+        <button th:if="${canManage}" type="button" class="btn btn-primary-custom mb-4" data-bs-toggle="modal" data-bs-target="#createOrderModal">
             <i class="fa-solid fa-plus me-2"></i>New Supply Order
         </button>
     </div>

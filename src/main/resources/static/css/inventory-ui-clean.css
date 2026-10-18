@@ -42,8 +42,8 @@ a { color: var(--ct-accent); }
     color: var(--ct-muted); text-decoration: none; padding: 8px 14px; border-radius: 10px;
     font-weight: 500; transition: background .15s, color .15s;
 }
-.ct-nav-link:hover { background: var(--ct-surface); color: #fff; }
-.ct-nav-link.active { background: rgba(109, 141, 255, 0.16); color: #fff; }
+.ct-nav-link:hover { background: var(--ct-surface); color: var(--primary); }
+.ct-nav-link.active { background: rgba(67, 24, 255, 0.10); color: var(--primary); }
 
 .ct-container { flex-grow: 1; padding: 32px 20px 48px; }
 .container.ct-container, .ct-nav .container { max-width: 1400px; }
@@ -65,12 +65,12 @@ a { color: var(--ct-accent); }
     background: transparent; border: 1px solid var(--ct-border-strong); color: var(--ct-text);
     padding: 10px 18px; border-radius: 10px; font-weight: 600; transition: background .15s;
 }
-.btn-outline-custom:hover { background: var(--ct-surface); color: #fff; }
+.btn-outline-custom:hover { background: rgba(67, 24, 255, 0.06); color: var(--primary); }
 .btn-danger-custom {
     background: rgba(248, 113, 113, 0.16); border: 1px solid rgba(248, 113, 113, 0.4); color: var(--ct-danger);
     padding: 10px 18px; border-radius: 10px; font-weight: 600;
 }
-.btn-danger-custom:hover { background: rgba(248, 113, 113, 0.28); color: #fff; }
+.btn-danger-custom:hover { background: rgba(248, 113, 113, 0.28); color: var(--ct-danger); }
 
 .btn-act {
     display: inline-flex; align-items: center; gap: 6px;
@@ -91,11 +91,11 @@ a { color: var(--ct-accent); }
     border-radius: 9px; border: 1px solid var(--ct-border); background: transparent; color: var(--ct-muted);
     cursor: pointer; transition: background .15s, color .15s, border-color .15s;
 }
-.icon-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; border-color: var(--ct-border-strong); }
+.icon-btn:hover { background: rgba(67, 24, 255, 0.08); color: var(--primary); border-color: var(--ct-border-strong); }
 .icon-btn-danger:hover { background: rgba(248, 113, 113, 0.18); color: var(--ct-danger); border-color: rgba(248, 113, 113, 0.4); }
 [data-tip]:hover::after, [data-tip]:focus-visible::after {
     content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
-    background: var(--ct-surface); color: #fff; border: 1px solid var(--ct-border-strong);
+    background: #1e293b; color: #fff; border: 1px solid #1e293b;
     padding: 3px 9px; border-radius: 7px; font-size: .75rem; font-weight: 500; white-space: nowrap; pointer-events: none; z-index: 20;
 }
 .row-actions { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
@@ -104,8 +104,8 @@ a { color: var(--ct-accent); }
 
 /* ---------- Alerts ---------- */
 .alert { border-radius: 12px; border-width: 1px; }
-.alert-success { background: rgba(52, 211, 153, 0.10); border-color: rgba(52, 211, 153, 0.35); color: var(--ct-ok); }
-.alert-danger { background: rgba(248, 113, 113, 0.10); border-color: rgba(248, 113, 113, 0.35); color: var(--ct-danger); }
+.alert-success { background: rgba(52, 211, 153, 0.12); border-color: rgba(16, 185, 129, 0.45); color: #047857; }
+.alert-danger { background: rgba(248, 113, 113, 0.10); border-color: rgba(239, 68, 68, 0.4); color: #b91c1c; }
 .alert-warning { background: rgba(251, 191, 36, 0.10); border-color: rgba(251, 191, 36, 0.35); color: var(--ct-warn); }
 .alert-warning a { color: #fde68a; }
 .alert-low { background: rgba(248, 113, 113, 0.09); border: 1px solid rgba(248, 113, 113, 0.35); color: var(--ct-danger); border-radius: 12px; padding: 12px 16px; }
@@ -141,8 +141,8 @@ button.stat.is-active { border-color: var(--ct-accent); }
     border: 0; background: transparent; color: var(--ct-muted); padding: 6px 14px; border-radius: 8px;
     font-size: .88rem; font-weight: 600; cursor: pointer; transition: background .15s, color .15s; font-family: inherit;
 }
-.chip:hover, .view-toggle button:hover { color: #fff; }
-.chip.active, .view-toggle button.active { background: rgba(109, 141, 255, 0.22); color: #fff; }
+.chip:hover, .view-toggle button:hover { color: var(--primary); }
+.chip.active, .view-toggle button.active { background: rgba(67, 24, 255, 0.12); color: var(--primary); font-weight: 600; }
 .toolbar .spacer { flex: 1 1 auto; }
 .result-count { color: var(--ct-muted); font-size: .88rem; }
 
@@ -235,7 +235,7 @@ select.form-control option { background: var(--ct-surface); color: var(--ct-text
 .pill-check { position: relative; margin: 0; cursor: pointer; }
 .pill-check input { position: absolute; opacity: 0; pointer-events: none; }
 .pill-check span { display: inline-block; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--ct-border-strong); color: var(--ct-muted); font-size: .88rem; font-weight: 500; transition: all .15s; }
-.pill-check input:checked + span { background: rgba(109, 141, 255, 0.2); border-color: var(--ct-accent); color: #fff; }
+.pill-check input:checked + span { background: rgba(67, 24, 255, 0.10); border-color: var(--ct-accent); color: var(--primary); font-weight: 600; }
 .pill-check input:focus-visible + span { outline: 2px solid var(--ct-accent); outline-offset: 2px; }
 .pill-check input:disabled + span { opacity: .45; }
 .usage-preview { margin-top: 12px; font-size: .88rem; color: var(--ct-accent); background: rgba(109, 141, 255, 0.08); border-radius: 10px; padding: 8px 12px; }
@@ -254,7 +254,7 @@ select.form-control option { background: var(--ct-surface); color: var(--ct-text
 .segmented label { flex: 1; margin: 0; text-align: center; cursor: pointer; }
 .segmented input { position: absolute; opacity: 0; pointer-events: none; }
 .segmented span { display: block; padding: 8px 10px; border-radius: 8px; color: var(--ct-muted); font-weight: 600; transition: all .15s; }
-.segmented input:checked + span { background: rgba(109, 141, 255, 0.25); color: #fff; }
+.segmented input:checked + span { background: rgba(67, 24, 255, 0.12); color: var(--primary); font-weight: 600; }
 .segmented input:focus-visible + span { outline: 2px solid var(--ct-accent); }
 .qty-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .qty-chips button { border: 1px solid var(--ct-border-strong); background: var(--ct-surface); color: var(--ct-text); border-radius: 999px; padding: 4px 14px; font-size: .85rem; font-weight: 600; cursor: pointer; }
